@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import ManageLayouts from "./pages/ManagesLayout";
 import Recipes from "./components/dashboard/Recipes";
 import Fridge from "./components/dashboard/Fridge";
+import DetailRecipes from "./components/dashboard/DetailRecipes";
 import "./App.css";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           {/* <Route path='/' index element={<div>Manage Dashboard</div>} /> */}
           <Route path="fridge" element={<Fridge />} />
           <Route path="recipes" element={<Recipes/>} />
+          <Route path="detailRecipes" element={<DetailRecipes />} />
         </Route>
       </Routes>
     </BrowserRouter>

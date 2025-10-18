@@ -8,6 +8,8 @@ import Recipes from "./components/dashboard/Recipes";
 import Fridge from "./components/dashboard/Fridge";
 import DetailRecipes from "./components/dashboard/DetailRecipes";
 import "./App.css";
+import FamilyProfiles from "./components/dashboard/FamilyProfile";
+import MealPlanner from "./components/dashboard/MealPlaner";
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
           <Route path="fridge" element={<Fridge />} />
           <Route path="recipes" element={<Recipes/>} />
           <Route path="detailRecipes" element={<DetailRecipes />} />
+          <Route path="familyProfile" element={<FamilyProfiles/>} />
+           <Route path="mealPlaner" element={<MealPlanner/>} />
         </Route>
       </Routes>
     </BrowserRouter>

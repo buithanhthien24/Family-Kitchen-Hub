@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import "../styles/DashboardSidebar.css";
 import {
   LayoutDashboard,
@@ -7,28 +7,49 @@ import {
   Share2,
   Trash2,
   LogOut,
+  UserRound
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const TABS = [
-  { label: "Dashboard", path: "/manage", icon: <LayoutDashboard size={18} /> },
+  { label: "Dashboard", path: "/manage/mealPlaner", icon: <LayoutDashboard size={18} /> },
   { label: "Recipes", path: "/manage/recipes", icon: <BookOpen size={18} /> },
   { label: "Fridge", path: "/manage/fridge", icon: <Snowflake size={18} /> },
-  { label: "Shared", path: "/manage/shared", icon: <Share2 size={18} /> },
+  { label: "Profile", path: "/manage/familyProfile", icon: <UserRound size={18} /> },
   { label: "Deleted", path: "/manage/deleted", icon: <Trash2 size={18} /> },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
+  const indicatorRef = useRef(null);
+  const tabsRef = useRef([]);
+
+  useEffect(() => {
+    const activeIndex = TABS.findIndex((tab) => tab.path === location.pathname);
+    const activeTab = tabsRef.current[activeIndex];
+
+    if (activeTab && indicatorRef.current) {
+      const rect = activeTab.getBoundingClientRect();
+      const parentRect = activeTab.parentElement.getBoundingClientRect();
+      indicatorRef.current.style.top = rect.top - parentRect.top + "px";
+      indicatorRef.current.style.height = rect.height + "px";
+    }
+  }, [location]);
 
   return (
     <div className="sidebar-tab-switcher-outer">
       <div className="sidebar-tab-switcher">
-        {TABS.map((tab) => (
+        {/* indicator (thanh trượt) */}
+        <div className="tab-indicator" ref={indicatorRef}></div>
+
+        {TABS.map((tab, i) => (
           <Link
             key={tab.path}
             to={tab.path}
-            className={`tab-btn${location.pathname === tab.path ? " active" : ""}`}
+            ref={(el) => (tabsRef.current[i] = el)}
+            className={`tab-btn${
+              location.pathname === tab.path ? " active" : ""
+            }`}
           >
             {tab.icon}
             <span>{tab.label}</span>

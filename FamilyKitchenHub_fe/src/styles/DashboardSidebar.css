@@ -41,17 +41,43 @@
   border: none;
   outline: none;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s;
+  transition: 
+    background 0.35s ease,
+    color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.2s ease;
   text-decoration: none;
   font-weight: 500;
 }
 
-.tab-btn.active {
-  background: #18181b;
-  color: #fff;
-  box-shadow: 0 0 0 2px #2563eb;
+/* hiệu ứng nhấn nhẹ khi click */
+.tab-btn:active {
+  transform: scale(0.94);
 }
 
+/* hiệu ứng hover */
+.tab-btn:hover {
+  background: rgba(255,255,255,0.3);
+  color: #111827;
+}
+
+/* hiệu ứng chuyển tab mượt */
+.tab-btn.active {
+  background: linear-gradient(90deg,#fb923c,#f97316);
+  color: #fff;
+  /* box-shadow: 0 0 0 2px #000000; */
+  transition-delay: 0.05s; /* 👈 thêm delay nhỏ để cảm giác “pop” */
+}
+.tab-content {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tab-content.active {
+  opacity: 1;
+  transform: translateY(0);
+}
 /* Logout button fixed bottom left */
 .sidebar-tab-switcher,
 .tab-logout-btn {

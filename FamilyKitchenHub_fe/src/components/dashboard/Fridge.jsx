@@ -1,8 +1,9 @@
+// ...existing code...
 import React, { useState } from "react";
 import "../../styles/FridgeManager.css";
-import { MoreVertical, Edit2, Trash2, RefreshCw, Plus } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, RefreshCw, Plus, X } from "lucide-react";
 
-const ingredients = [
+const initialIngredients = [
   {
     name: "Chicken Breast",
     quantity: "500g",
@@ -85,6 +86,25 @@ const statusInfo = {
 
 export default function FridgeManager() {
   const [menuIndex, setMenuIndex] = useState(null);
+  const [items, setItems] = useState(initialIngredients);
+
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("quick"); // 'quick' | 'custom'
+
+  // form fields
+  const [quickName, setQuickName] = useState("");
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("Main Fridge");
+  const [expiry, setExpiry] = useState("");
+
+  // prevent background scroll when modal open
+  React.useEffect(() => {
+    if (isModalOpen) document.body.classList.add("modal-open");
+    else document.body.classList.remove("modal-open");
+  }, [isModalOpen]);
 
   // Đóng menu khi click ra ngoài
   React.useEffect(() => {
@@ -94,6 +114,76 @@ export default function FridgeManager() {
       return () => window.removeEventListener("click", close);
     }
   }, [menuIndex]);
+
+  function openModal(tab = "quick") {
+    setActiveTab(tab);
+    setIsModalOpen(true);
+    // reset fields
+    setQuickName("");
+    setName("");
+    setQuantity("");
+    setCategory("");
+    setLocation("Main Fridge");
+    setExpiry("");
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+  }
+
+  function formatExpiry(dateStr) {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  }
+
+  function handleAddQuick(e) {
+    e.preventDefault();
+    if (!quickName.trim()) return alert("Enter item name");
+    const newItem = {
+      name: quickName.trim(),
+      quantity: "",
+      category: "",
+      location: "Main Fridge",
+      expiry: "",
+      status: "Fresh",
+      icon: "🧾",
+      expiredDays: 0,
+    };
+    setItems((s) => [newItem, ...s]);
+    closeModal();
+  }
+
+  function handleAddCustom(e) {
+    e.preventDefault();
+    if (!name.trim()) return alert("Ingredient name required");
+    const formattedExpiry = formatExpiry(expiry);
+    // determine status simple: expired if date in past, expiring soon if within 3 days
+    let status = "Fresh";
+    if (expiry) {
+      const d = new Date(expiry);
+      const now = new Date();
+      const diff = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+      if (diff < 0) status = "Expired";
+      else if (diff <= 3) status = "Expiring Soon";
+    }
+    const newItem = {
+      name: name.trim(),
+      quantity: quantity.trim(),
+      category: category.trim(),
+      location,
+      expiry: formattedExpiry,
+      status,
+      icon: "", // user can add later
+      expiredDays: status === "Expired" ? Math.abs(Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24))) : 0,
+    };
+    setItems((s) => [newItem, ...s]);
+    closeModal();
+  }
 
   return (
     <div className="fridge-manager fridge-bg">
@@ -137,14 +227,14 @@ export default function FridgeManager() {
       {/* Header row */}
       <div className="fridge-header-row">
         <h2>Your Ingredients</h2>
-        <button className="add-btn-card">
+        <button className="add-btn-card" onClick={() => openModal("custom")}>
           <Plus size={18} style={{ marginRight: 6 }} /> Add Ingredient
         </button>
       </div>
 
       {/* Card Grid */}
       <div className="ingredient-card-grid">
-        {ingredients.map((item, idx) => (
+        {items.map((item, idx) => (
           <div
             className="ingredient-card styled-card"
             key={idx}
@@ -152,7 +242,7 @@ export default function FridgeManager() {
           >
             <div className="card-top-row">
               <div className="ingredient-icon-circle">
-                <span className="ingredient-icon">{item.icon || ""}</span>
+                <span className="ingredient-icon">{item.icon || "🍽️"}</span>
               </div>
               <div className="card-menu-wrap">
                 <button
@@ -165,13 +255,12 @@ export default function FridgeManager() {
                   <MoreVertical size={20} />
                 </button>
                 {menuIndex === idx && (
-                  <div className="card-menu-dropdown styled-dropdown">
+                  <div className="card-menu-dropdown styled-dropdown" onClick={(e) => e.stopPropagation()}>
                     <button className="dropdown-item">
                       <Edit2 size={16} style={{ marginRight: 8 }} /> Edit
                     </button>
                     <button className="dropdown-item">
-                      <RefreshCw size={16} style={{ marginRight: 8 }} /> Update
-                      expiry
+                      <RefreshCw size={16} style={{ marginRight: 8 }} /> Update expiry
                     </button>
                     <button className="dropdown-item delete">
                       <Trash2 size={16} style={{ marginRight: 8 }} /> Delete
@@ -204,6 +293,64 @@ export default function FridgeManager() {
           </div>
         ))}
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add Ingredient</h3>
+              <button className="modal-close" onClick={closeModal}><X size={18} /></button>
+            </div>
+
+            <div className="modal-tabs">
+              <button className={`tab ${activeTab === "quick" ? "active" : ""}`} onClick={() => setActiveTab("quick")}>Quick Add</button>
+              <button className={`tab ${activeTab === "custom" ? "active" : ""}`} onClick={() => setActiveTab("custom")}>Custom Entry</button>
+            </div>
+
+            {activeTab === "quick" ? (
+              <form className="modal-form" onSubmit={handleAddQuick}>
+                <label>Ingredient Name</label>
+                <input value={quickName} onChange={(e) => setQuickName(e.target.value)} placeholder="e.g., Fresh Salmon" />
+                <button className="btn-primary" type="submit">Add to Fridge</button>
+              </form>
+            ) : (
+              <form className="modal-form" onSubmit={handleAddCustom}>
+                <div className="form-grid">
+                  <div>
+                    <label>Ingredient Name</label>
+                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Fresh Salmon" />
+                  </div>
+                  <div>
+                    <label>Quantity</label>
+                    <input value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="e.g., 500g, 2 pcs, 1L" />
+                  </div>
+                  <div>
+                    <label>Category</label>
+                    <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g., Dairy" />
+                  </div>
+                  <div>
+                    <label>Expiry Date</label>
+                    <input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <label>Location</label>
+                  <select value={location} onChange={(e) => setLocation(e.target.value)}>
+                    <option>Main Fridge</option>
+                    <option>Freezer</option>
+                    <option>Crisper Drawer</option>
+                  </select>
+                </div>
+
+                <button className="btn-primary" type="submit" style={{ marginTop: 18 }}>Add to Fridge</button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+// ...existing code...

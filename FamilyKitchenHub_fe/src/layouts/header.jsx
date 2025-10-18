@@ -54,7 +54,9 @@ export default function Header() {
                 Home
               </a>
             </Link>
-            <a href="#">Features</a>
+            <Link to="/manage">
+              <a href="#">Feature</a>
+            </Link> 
             <a href="#">Tools</a>
             <a href="#">Get Started</a>
             <Link to={"/login"}>

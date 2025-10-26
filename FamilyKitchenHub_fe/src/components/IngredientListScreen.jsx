@@ -23,6 +23,8 @@ import {
     MenuItem
 } from '@mui/material';
 import { Search, Add, Edit, DeleteOutline, Save, Cancel } from '@mui/icons-material';
+import AddIngredientScreen from './AddIngredientScreen';
+import '../styles/IngredientListScreen.css';
 
 // Dữ liệu giả định cho bảng
 const ingredientsData = [
@@ -32,9 +34,10 @@ const ingredientsData = [
     { name: 'Fresh Milk', expire: '08-03-2022', type: 'Dairy & Eggs', amount: 1592, position: 'Main compartment', status: 'Out Date' },
 ];
 
-const IngredientListScreen = ({ onNavigateToAdd }) => {
+const IngredientListScreen = () => {
+    const [showAddScreen, setShowAddScreen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [editingIngredient, setEditingIngredient] = useState(null);
+    const [_editingIngredient, setEditingIngredient] = useState(null);
     const [editFormData, setEditFormData] = useState({
         name: '',
         expire: '',
@@ -45,10 +48,11 @@ const IngredientListScreen = ({ onNavigateToAdd }) => {
     });
 
     const handleAddIngredient = () => {
-        // Chuyển đến trang thêm nguyên liệu thông qua DashboardLayout
-        if (onNavigateToAdd) {
-            onNavigateToAdd();
-        }
+        setShowAddScreen(true);
+    };
+
+    const handleCloseAddScreen = () => {
+        setShowAddScreen(false);
     };
 
     const handleEditIngredient = (ingredient) => {
@@ -102,10 +106,10 @@ const IngredientListScreen = ({ onNavigateToAdd }) => {
     };
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box className="ingredient-list-container">
             
             {/* --- Warning Card --- */}
-            <Paper elevation={3} sx={{ p: 2, mb: 4, borderLeft: '5px solid #ff4500' }}>
+            <Paper elevation={3} className="warning-card">
                 <Typography variant="h6" color="error" sx={{ fontWeight: 'bold' }}>
                     Warning
                 </Typography>
@@ -125,7 +129,7 @@ const IngredientListScreen = ({ onNavigateToAdd }) => {
             </Typography>
 
             {/* --- Filter & Search Section --- */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+            <Box className="filter-section">
                 {/* Simplified Filters - You would replace these with actual date/select inputs */}
                 <TextField label="Date" size="small" sx={{ width: 150 }} />
                 <TextField label="Date" size="small" sx={{ width: 150 }} />
@@ -207,12 +211,21 @@ const IngredientListScreen = ({ onNavigateToAdd }) => {
             </TableContainer>
             
             {/* Pagination is simplified */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 2 }}>
-                <Typography variant="body2" sx={{ mr: 2 }}>Page</Typography>
-                <TextField size="small" defaultValue="1" sx={{ width: 50, mr: 1 }} />
-                <Typography variant="body2">of 30</Typography>
-            </Box>
-
+           {/* Pagination */}
+           <Box className="pagination-container">
+                    <Typography variant="body2">Page</Typography>
+                    <IconButton size="small">‹</IconButton>
+                    <Typography variant="body2" sx={{ 
+                        bgcolor: '#1976d2', 
+                        color: 'white', 
+                        px: 1, 
+                        borderRadius: 1 
+                    }}>
+                        1
+                    </Typography>
+                    <IconButton size="small">›</IconButton>
+                    <Typography variant="body2">30</Typography>
+                </Box>
             {/* Edit Dialog */}
             <Dialog open={editDialogOpen} onClose={handleCancelEdit} maxWidth="md" fullWidth>
                 <DialogTitle>Chỉnh sửa nguyên liệu</DialogTitle>
@@ -298,6 +311,21 @@ const IngredientListScreen = ({ onNavigateToAdd }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Add Ingredient Overlay */}
+            {showAddScreen && (
+                <Box
+                    onClick={handleCloseAddScreen}
+                    className="overlay-backdrop"
+                >
+                    <Box
+                        onClick={(e) => e.stopPropagation()}
+                        className="overlay-content"
+                    >
+                        <AddIngredientScreen onClose={handleCloseAddScreen} />
+                    </Box>
+                </Box>
+            )}
         </Box>
     );
 };

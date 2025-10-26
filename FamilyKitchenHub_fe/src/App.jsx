@@ -2,12 +2,13 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import MainLayout from "./layouts/MainLayout";
-import DashboardLayout from "./layouts/DashboardLayout";
 import Home from "./pages/Home";
 import ManageLayouts from "./pages/ManagesLayout";
 import Recipes from "./components/dashboard/Recipes";
 import Fridge from "./components/dashboard/Fridge";
 import "./App.css";
+import IngredientListScreen from "./components/IngredientListScreen";
+import EditProfile from "./components/EditProfile";
 
 function App() {  
   return (
@@ -19,14 +20,14 @@ function App() {
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="Dashboard" element={<DashboardLayout />} />
         </Route>
         {/* Dùng ManageLayouts cho các trang quản lý */}
         <Route path="/manage/*" element={<ManageLayouts />}>
           {/* Các trang con quản lý */}
-          {/* <Route path='/' index element={<div>Manage Dashboard</div>} /> */}
+          <Route path="Dashboard" element={<IngredientListScreen />} />
           <Route path="fridge" element={<Fridge />} />
           <Route path="recipes" element={<Recipes/>} />
+          <Route path="editprofile" element={<EditProfile />} />
         </Route>
       </Routes>
     </BrowserRouter>

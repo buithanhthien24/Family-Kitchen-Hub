@@ -15,8 +15,9 @@ import {
     Autocomplete
 } from '@mui/material';
 import { Add, Quickreply, MoreVert, Close } from '@mui/icons-material';
+import '../styles/AddIngredientScreen.css';
 
-const AddIngredientScreen = ({ onNavigateToList }) => {
+const AddIngredientScreen = ({ onClose }) => {
     // State cho form
     const [formData, setFormData] = useState({
         ingredientName: '',
@@ -58,66 +59,47 @@ const AddIngredientScreen = ({ onNavigateToList }) => {
         console.log('Form data:', formData);
         // TODO: Gọi API để lưu nguyên liệu
         alert('Nguyên liệu đã được thêm thành công!');
-        onNavigateToList(); // Đóng modal và quay về danh sách
+        if (onClose) {
+            onClose(); // Đóng overlay
+        }
     };
 
     return (
-        <Box sx={{ backgroundColor: 'white' }}>
+        <Box>
             {/* Top Action Bar */}
-            <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                p: 2,
-                borderBottom: '1px solid #e0e0e0'
-            }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box className="top-action-bar">
+                <Box className="action-buttons-group">
                     <IconButton>
                         <MoreVert />
                     </IconButton>
                     <Button 
                         variant="contained" 
-                        sx={{ 
-                            bgcolor: '#ff6b35', 
-                            '&:hover': { bgcolor: '#e55a2b' },
-                            textTransform: 'none',
-                            fontWeight: 'bold'
-                        }} 
+                        className="add-btn"
                         startIcon={<Add />}
                     >
                         Add Ingredient
                     </Button>
                     <Button 
                         variant="contained" 
-                        sx={{ 
-                            bgcolor: '#87ceeb', 
-                            '&:hover': { bgcolor: '#7bc4dc' },
-                            textTransform: 'none',
-                            fontWeight: 'bold'
-                        }} 
+                        className="quick-add-btn"
                         startIcon={<Quickreply />}
                     >
                         Quick Add
                     </Button>
                 </Box>
-                <IconButton onClick={onNavigateToList}>
+                <IconButton onClick={onClose}>
                     <Close />
                 </IconButton>
             </Box>
 
             {/* Main Form Card */}
-            <Box sx={{ p: 3 }}>
-                <Card sx={{ 
-                    maxWidth: 800, 
-                    mx: 'auto',
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                    <CardContent sx={{ p: 4 }}>
+            <Box className="form-container">
+                <Card className="main-form-card">
+                    <CardContent className="form-card-content">
                         <Grid container spacing={3}>
                             {/* Basic Information Section */}
                             <Grid item xs={12}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                <Typography variant="h6" className="section-title">
                                     Basic Information
                                 </Typography>
                                 <Grid container spacing={3}>
@@ -193,7 +175,7 @@ const AddIngredientScreen = ({ onNavigateToList }) => {
 
                             {/* Quantity & Unit Section */}
                             <Grid item xs={12}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                <Typography variant="h6" className="section-title">
                                     Quantity & Unit
                                 </Typography>
                                 <Grid container spacing={3}>
@@ -256,7 +238,7 @@ const AddIngredientScreen = ({ onNavigateToList }) => {
 
                             {/* Storage Information Section */}
                             <Grid item xs={12}>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                <Typography variant="h6" className="section-title">
                                     Storage Information
                                 </Typography>
                                 <Grid container spacing={3}>
@@ -327,18 +309,10 @@ const AddIngredientScreen = ({ onNavigateToList }) => {
                 </Card>
 
                 {/* Bottom Action Button */}
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                <Box className="bottom-action-button">
                     <Button 
                         variant="contained" 
-                        sx={{ 
-                            bgcolor: '#ff6b35', 
-                            '&:hover': { bgcolor: '#e55a2b' }, 
-                            px: 4,
-                            py: 1.5,
-                            textTransform: 'none',
-                            fontWeight: 'bold',
-                            fontSize: '16px'
-                        }}
+                        className="submit-btn"
                         startIcon={<Add />}
                         onClick={handleSubmit}
                     >
@@ -346,27 +320,7 @@ const AddIngredientScreen = ({ onNavigateToList }) => {
                     </Button>
                 </Box>
 
-                {/* Pagination */}
-                <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    mt: 3,
-                    gap: 1
-                }}>
-                    <Typography variant="body2">Page</Typography>
-                    <IconButton size="small">‹</IconButton>
-                    <Typography variant="body2" sx={{ 
-                        bgcolor: '#1976d2', 
-                        color: 'white', 
-                        px: 1, 
-                        borderRadius: 1 
-                    }}>
-                        1
-                    </Typography>
-                    <IconButton size="small">›</IconButton>
-                    <Typography variant="body2">30</Typography>
-                </Box>
+                
             </Box>
         </Box>
     );

@@ -8,13 +8,10 @@ import Recipes from "./components/dashboard/Recipes";
 import Fridge from "./components/dashboard/Fridge";
 import DetailRecipes from "./components/dashboard/DetailRecipes";
 import "./App.css";
-import FamilyProfiles from "./components/dashboard/FamilyProfile";
-import MealPlanner from "./components/dashboard/MealPlaner";
-import RegisterPage from "./pages/RegisterPage";
-import VerifyEmail from "./pages/VerifyEmail";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-function App() {
+import IngredientListScreen from "./components/IngredientListScreen";
+import EditProfile from "./components/EditProfile";
+
+function App() {  
   return (
     <BrowserRouter>
      <ToastContainer position="top-right" autoClose={3000} />
@@ -33,12 +30,13 @@ function App() {
         {/* Dùng ManageLayouts cho các trang quản lý */}
         <Route path="/manage/*" element={<ManageLayouts />}>
           {/* Các trang con quản lý */}
-          {/* <Route path='/' index element={<div>Manage Dashboard</div>} /> */}
+          <Route path="Dashboard" element={<IngredientListScreen />} />
           <Route path="fridge" element={<Fridge />} />
           <Route path="recipes" element={<Recipes/>} />
           <Route path="detailRecipes" element={<DetailRecipes />} />
           <Route path="familyProfile" element={<FamilyProfiles/>} />
            <Route path="mealPlaner" element={<MealPlanner/>} />
+          <Route path="editprofile" element={<EditProfile />} />
         </Route>
       </Routes>
     </BrowserRouter>

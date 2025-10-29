@@ -7,15 +7,12 @@ import {
   Trash2,
   LogOut,
   UserRound,
+  User,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const TABS = [
-  {
-    label: "Dashboard",
-    path: "/manage/mealPlaner",
-    icon: <LayoutDashboard size={18} />,
-  },
+  { label: "Dashboard", path: "/manage/Dashboard", icon: <LayoutDashboard size={18} /> },
   { label: "Recipes", path: "/manage/recipes", icon: <BookOpen size={18} /> },
   { label: "Fridge", path: "/manage/fridge", icon: <Snowflake size={18} /> },
   {
@@ -24,6 +21,7 @@ const TABS = [
     icon: <UserRound size={18} />,
   },
   { label: "Deleted", path: "/manage/deleted", icon: <Trash2 size={18} /> },
+  { label: "Edit Profile", path: "/manage/editprofile", icon: <User size={18} /> },
 ];
 
 export default function Sidebar() {

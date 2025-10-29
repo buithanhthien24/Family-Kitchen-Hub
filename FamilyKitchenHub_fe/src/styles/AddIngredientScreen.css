@@ -1,0 +1,113 @@
+.add-ingredient-container {
+  /* Main container styles */
+}
+
+.top-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.action-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.add-btn {
+  background-color: #ff6b35;
+  text-transform: none;
+  font-weight: bold;
+}
+
+.add-btn:hover {
+  background-color: #e55a2b;
+}
+
+.quick-add-btn {
+  background-color: #87ceeb;
+  text-transform: none;
+  font-weight: bold;
+}
+
+.quick-add-btn:hover {
+  background-color: #7bc4dc;
+}
+
+.form-container {
+  padding: 24px;
+}
+
+.main-form-card {
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-card-content {
+  padding: 32px;
+}
+
+.section-title {
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.input-field {
+  width: 480px;
+  height: 64px;
+}
+
+.input-field .MuiOutlinedInput-root {
+  height: 64px;
+}
+
+.input-field .MuiInputLabel-root {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input-field .MuiInputBase-input {
+  font-size: 14px;
+  padding: 20px 14px;
+  height: 24px;
+}
+
+.select-field {
+  height: 64px;
+  width: 300px;
+}
+
+.select-field .MuiOutlinedInput-notchedOutline {
+  height: 64px;
+}
+
+.select-field .MuiSelect-select {
+  font-size: 14px;
+  padding: 20px 14px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.bottom-action-button {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.submit-btn {
+  background-color: #ff6b35;
+  padding: 12px 32px;
+  text-transform: none;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.submit-btn:hover {
+  background-color: #e55a2b;
+}
+

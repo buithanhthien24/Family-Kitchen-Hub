@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import "../styles/Header.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function Header() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -11,6 +13,15 @@ export default function Header() {
       setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  const handleFeatureClick = (e) => {
+    if (!user) {
+      e.preventDefault(); // Ngăn chuyển trang
+      toast.warning("🍳 Please login to access this feature!", {
+        theme: "colored",
+      });
+    }
+  };
 
   return (
     <>
@@ -50,16 +61,20 @@ export default function Header() {
 
           <div className="spacer"></div>
 
-          <nav className="site-nav" role="navigation" aria-label="Main navigation">
+          <nav
+            className="site-nav"
+            role="navigation"
+            aria-label="Main navigation"
+          >
             <Link to="/home">Home</Link>
-            <Link to="/manage">Feature</Link>
+            <Link to="/manage" onClick={handleFeatureClick}>
+              Feature
+            </Link>
             <a href="#">Tools</a>
             <a href="#">Get Started</a>
 
             {user ? (
-              <div className="user-info">
-                👋 Hi, {user.fullName || user.username}
-              </div>
+              <div className="user-info">👋 Hi, {user.fullName || user.username}</div>
             ) : (
               <Link to="/login" className="btn-signin">
                 Sign In

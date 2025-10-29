@@ -4,23 +4,31 @@ import {
   LayoutDashboard,
   BookOpen,
   Snowflake,
-  Share2,
   Trash2,
   LogOut,
-  UserRound
+  UserRound,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const TABS = [
-  { label: "Dashboard", path: "/manage/mealPlaner", icon: <LayoutDashboard size={18} /> },
+  {
+    label: "Dashboard",
+    path: "/manage/mealPlaner",
+    icon: <LayoutDashboard size={18} />,
+  },
   { label: "Recipes", path: "/manage/recipes", icon: <BookOpen size={18} /> },
   { label: "Fridge", path: "/manage/fridge", icon: <Snowflake size={18} /> },
-  { label: "Profile", path: "/manage/familyProfile", icon: <UserRound size={18} /> },
+  {
+    label: "Profile",
+    path: "/manage/familyProfile",
+    icon: <UserRound size={18} />,
+  },
   { label: "Deleted", path: "/manage/deleted", icon: <Trash2 size={18} /> },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const indicatorRef = useRef(null);
   const tabsRef = useRef([]);
 
@@ -35,6 +43,18 @@ export default function Sidebar() {
       indicatorRef.current.style.height = rect.height + "px";
     }
   }, [location]);
+
+  const handleLogout = () => {
+    // Xoá token hoặc dữ liệu đăng nhập
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Có thể thêm thông báo nếu muốn
+    alert("You have been logged out!");
+
+    // Điều hướng về trang login
+    navigate("/login");
+  };
 
   return (
     <div className="sidebar-tab-switcher-outer">
@@ -56,7 +76,9 @@ export default function Sidebar() {
           </Link>
         ))}
       </div>
-      <Link to="/logout" className="tab-logout-btn">
+
+      {/* Nút Logout */}
+      <Link to="/home" className="tab-logout-btn" onClick={handleLogout}>
         <LogOut size={18} />
         <span>Logout</span>
       </Link>

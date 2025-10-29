@@ -1,356 +1,187 @@
-// ...existing code...
-import React, { useState } from "react";
-import "../../styles/FridgeManager.css";
-import { MoreVertical, Edit2, Trash2, RefreshCw, Plus, X } from "lucide-react";
-
-const initialIngredients = [
-  {
-    name: "Chicken Breast",
-    quantity: "500g",
-    category: "Meat",
-    location: "Main Fridge",
-    expiry: "Dec 28, 2024",
-    status: "Expiring Soon",
-    icon: "🍗",
-    expiredDays: 286,
-  },
-  {
-    name: "Fresh Milk",
-    quantity: "1L",
-    category: "Dairy",
-    location: "Main Fridge",
-    expiry: "Dec 25, 2024",
-    status: "Expired",
-    icon: "🥛",
-    expiredDays: 290,
-  },
-  {
-    name: "Broccoli",
-    quantity: "300g",
-    category: "Vegetables",
-    location: "Crisper Drawer",
-    expiry: "Jan 5, 2025",
-    status: "Fresh",
-    icon: "🥦",
-    expiredDays: 0,
-  },
-  {
-    name: "Eggs",
-    quantity: "12 pcs",
-    category: "Dairy",
-    location: "Main Fridge",
-    expiry: "Jan 10, 2025",
-    status: "Fresh",
-    icon: "🥚",
-    expiredDays: 0,
-  },
-  {
-    name: "Tomatoes",
-    quantity: "6 pcs",
-    category: "Vegetables",
-    location: "Main Fridge",
-    expiry: "Jan 2, 2025",
-    status: "Expiring Soon",
-    icon: "🍅",
-    expiredDays: 0,
-  },
-  {
-    name: "Butter",
-    quantity: "200g",
-    category: "Dairy",
-    location: "Main Fridge",
-    expiry: "Jan 20, 2025",
-    status: "Fresh",
-    icon: "🧈",
-    expiredDays: 0,
-  },
-];
-
-const statusInfo = {
-  Fresh: {
-    class: "status-fresh",
-    icon: "✅",
-    text: "Fresh",
-  },
-  "Expiring Soon": {
-    class: "status-expiring",
-    icon: "⚠️",
-    text: "Expiring Soon",
-  },
-  Expired: {
-    class: "status-expired",
-    icon: "⛔",
-    text: "Expired",
-  },
-};
+import React, { useState, useEffect } from "react";
+import axios from "../../hooks/axios"; // file cấu hình axios riêng
+import "./../../styles/FridgeManager.css";
+import { Plus, MoreVertical } from "lucide-react";
 
 export default function FridgeManager() {
-  const [menuIndex, setMenuIndex] = useState(null);
-  const [items, setItems] = useState(initialIngredients);
+  const [ingredients, setIngredients] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newIngredient, setNewIngredient] = useState({
+    name: "",
+    unit: "",
+    nutritionalInfo: "",
+  });
 
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("quick"); // 'quick' | 'custom'
+  // Lấy token từ localStorage
+  const token = localStorage.getItem("token");
 
-  // form fields
-  const [quickName, setQuickName] = useState("");
-  const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("Main Fridge");
-  const [expiry, setExpiry] = useState("");
+  // GET nguyên liệu
+  useEffect(() => {
+    const fetchIngredients = async () => {
+      try {
+        const res = await axios.get("http://localhost:8080/api/ingredients", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setIngredients(res.data);
+      } catch (error) {
+        console.error("Error fetching ingredients:", error);
+      }
+    };
+    fetchIngredients();
+  }, [token]);
 
-  // prevent background scroll when modal open
-  React.useEffect(() => {
-    if (isModalOpen) document.body.classList.add("modal-open");
-    else document.body.classList.remove("modal-open");
-  }, [isModalOpen]);
-
-  // Đóng menu khi click ra ngoài
-  React.useEffect(() => {
-    const close = () => setMenuIndex(null);
-    if (menuIndex !== null) {
-      window.addEventListener("click", close);
-      return () => window.removeEventListener("click", close);
-    }
-  }, [menuIndex]);
-
-  function openModal(tab = "quick") {
-    setActiveTab(tab);
-    setIsModalOpen(true);
-    // reset fields
-    setQuickName("");
-    setName("");
-    setQuantity("");
-    setCategory("");
-    setLocation("Main Fridge");
-    setExpiry("");
-  }
-
-  function closeModal() {
-    setIsModalOpen(false);
-  }
-
-  function formatExpiry(dateStr) {
-    if (!dateStr) return "";
+  // POST thêm nguyên liệu
+  const handleAddIngredient = async (e) => {
+    e.preventDefault();
     try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-    } catch {
-      return dateStr;
+      await axios.post(
+        "http://localhost:8080/api/ingredients",
+        newIngredient,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setShowModal(false);
+      setNewIngredient({ name: "", unit: "", nutritionalInfo: "" });
+      const res = await axios.get("http://localhost:8080/api/ingredients", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIngredients(res.data);
+    } catch (error) {
+      console.error("Error adding ingredient:", error);
     }
-  }
+  };
 
-  function handleAddQuick(e) {
-    e.preventDefault();
-    if (!quickName.trim()) return alert("Enter item name");
-    const newItem = {
-      name: quickName.trim(),
-      quantity: "",
-      category: "",
-      location: "Main Fridge",
-      expiry: "",
-      status: "Fresh",
-      icon: "🧾",
-      expiredDays: 0,
-    };
-    setItems((s) => [newItem, ...s]);
-    closeModal();
-  }
-
-  function handleAddCustom(e) {
-    e.preventDefault();
-    if (!name.trim()) return alert("Ingredient name required");
-    const formattedExpiry = formatExpiry(expiry);
-    // determine status simple: expired if date in past, expiring soon if within 3 days
-    let status = "Fresh";
-    if (expiry) {
-      const d = new Date(expiry);
-      const now = new Date();
-      const diff = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
-      if (diff < 0) status = "Expired";
-      else if (diff <= 3) status = "Expiring Soon";
-    }
-    const newItem = {
-      name: name.trim(),
-      quantity: quantity.trim(),
-      category: category.trim(),
-      location,
-      expiry: formattedExpiry,
-      status,
-      icon: "", // user can add later
-      expiredDays: status === "Expired" ? Math.abs(Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24))) : 0,
-    };
-    setItems((s) => [newItem, ...s]);
-    closeModal();
-  }
+  const getStatus = (expDate) => {
+    if (!expDate) return "Fresh";
+    const today = new Date();
+    const expiry = new Date(expDate);
+    const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
+    if (diffDays < 0) return "Expired";
+    if (diffDays <= 3) return "Expiring Soon";
+    return "Fresh";
+  };
 
   return (
-    <div className="fridge-manager fridge-bg">
-      {/* Header Section */}
-      <div className="fridge-hero-row">
-        <div className="fridge-hero-left">
-          <div className="fridge-hero-title">
-            <span role="img" aria-label="wave" className="fridge-hero-emoji">
-              👋
-            </span>
-            <span className="fridge-hero-hi">
-              Hi Huy! Let's check your fridge today
-            </span>
-          </div>
-          <div className="fridge-hero-desc">
-            Keep your ingredients fresh and reduce food waste
-          </div>
+    <div className="fridge-manager">
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <div className="welcome-text">
+          <h1>👋 Welcome to Fridge Manager! Let’s check your fridge today</h1>
+          <p>Keep your ingredients fresh and reduce food waste</p>
         </div>
-        <div className="fridge-hero-right">
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/1046/1046857.png"
-            alt="Chibi fridge character"
-            className="fridge-hero-img"
-          />
-        </div>
+        <img
+          src="/images/fridge.png"
+          alt="Chibi fridge character"
+          className="fridge-icon"
+        />
       </div>
 
-      {/* Alert */}
-      <div className="alert-box-card">
-        <span style={{ marginRight: 8 }}>
-          ⚠️<span style={{ color: "#facc15", marginLeft: 2 }}>▲</span>
-        </span>
-        <div>
-          <b>
-            You have 1 expired item.
-            <br />2 items are expiring soon.
-          </b>
-        </div>
-      </div>
-
-      {/* Header row */}
-      <div className="fridge-header-row">
+      {/* Header */}
+      <div className="header">
         <h2>Your Ingredients</h2>
-        <button className="add-btn-card" onClick={() => openModal("custom")}>
-          <Plus size={18} style={{ marginRight: 6 }} /> Add Ingredient
+        <button className="btn primary" onClick={() => setShowModal(true)}>
+          <Plus size={18} /> Add Ingredient
         </button>
       </div>
 
-      {/* Card Grid */}
-      <div className="ingredient-card-grid">
-        {items.map((item, idx) => (
-          <div
-            className="ingredient-card styled-card"
-            key={idx}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="card-top-row">
-              <div className="ingredient-icon-circle">
-                <span className="ingredient-icon">{item.icon || "🍽️"}</span>
-              </div>
-              <div className="card-menu-wrap">
-                <button
-                  className="card-menu-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuIndex(menuIndex === idx ? null : idx);
-                  }}
-                >
-                  <MoreVertical size={20} />
-                </button>
-                {menuIndex === idx && (
-                  <div className="card-menu-dropdown styled-dropdown" onClick={(e) => e.stopPropagation()}>
-                    <button className="dropdown-item">
-                      <Edit2 size={16} style={{ marginRight: 8 }} /> Edit
-                    </button>
-                    <button className="dropdown-item">
-                      <RefreshCw size={16} style={{ marginRight: 8 }} /> Update expiry
-                    </button>
-                    <button className="dropdown-item delete">
-                      <Trash2 size={16} style={{ marginRight: 8 }} /> Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="ingredient-name">{item.name}</div>
-            <div className="ingredient-qty">{item.quantity}</div>
-            <div className="ingredient-info">
-              <div>
-                <span className="info-label">Category:</span>{" "}
-                <b>{item.category}</b>
-              </div>
-              <div>
-                <span className="info-label">Location:</span>{" "}
-                <b>{item.location}</b>
-              </div>
-              <div className="expiry-row">
-                <span className="info-label">Expires:</span>
-                <span className="expiry-badge">{item.expiry}</span>
-              </div>
-            </div>
+      {/* Ingredient Grid */}
+      <div className="ingredient-grid">
+        {ingredients.map((item) => {
+          const info = item.nutritionalInfo
+            ? JSON.parse(item.nutritionalInfo)
+            : {};
+          const status = getStatus(item.expiryDate);
+
+          return (
             <div
-              className={`ingredient-status ${statusInfo[item.status].class}`}
+              key={item.id}
+              className={`ingredient-card ${status.toLowerCase().replace(" ", "-")}`}
             >
-              {statusInfo[item.status].text}
+              <div className="card-header">
+                <h3>{item.name}</h3>
+                <MoreVertical size={16} />
+              </div>
+              <p className="info">{item.name}</p>
+              <p className="info">{item.unit}</p>
+              <div className="nutrition">
+                <p className="nutrition-title">Nutrition (per 100g):</p>
+                <div className="nutrition-badges">
+                  {info.protein && <span>Protein: {info.protein}</span>}
+                  {info.fat && <span>Fat: {info.fat}</span>}
+                  {info.calories && <span>{info.calories} cal</span>}
+                </div>
+              </div>
+
+              <div className={`status ${status.toLowerCase().replace(" ", "-")}`}>
+                {status}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+      {showModal && (
+        <div className="modal-overlay active">
+          <div className="modal">
             <div className="modal-header">
               <h3>Add Ingredient</h3>
-              <button className="modal-close" onClick={closeModal}><X size={18} /></button>
+              <button className="icon-btn" onClick={() => setShowModal(false)}>
+                ✖
+              </button>
             </div>
-
-            <div className="modal-tabs">
-              <button className={`tab ${activeTab === "quick" ? "active" : ""}`} onClick={() => setActiveTab("quick")}>Quick Add</button>
-              <button className={`tab ${activeTab === "custom" ? "active" : ""}`} onClick={() => setActiveTab("custom")}>Custom Entry</button>
-            </div>
-
-            {activeTab === "quick" ? (
-              <form className="modal-form" onSubmit={handleAddQuick}>
-                <label>Ingredient Name</label>
-                <input value={quickName} onChange={(e) => setQuickName(e.target.value)} placeholder="e.g., Fresh Salmon" />
-                <button className="btn-primary" type="submit">Add to Fridge</button>
-              </form>
-            ) : (
-              <form className="modal-form" onSubmit={handleAddCustom}>
-                <div className="form-grid">
-                  <div>
-                    <label>Ingredient Name</label>
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Fresh Salmon" />
-                  </div>
-                  <div>
-                    <label>Quantity</label>
-                    <input value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="e.g., 500g, 2 pcs, 1L" />
-                  </div>
-                  <div>
-                    <label>Category</label>
-                    <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g., Dairy" />
-                  </div>
-                  <div>
-                    <label>Expiry Date</label>
-                    <input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <label>Location</label>
-                  <select value={location} onChange={(e) => setLocation(e.target.value)}>
-                    <option>Main Fridge</option>
-                    <option>Freezer</option>
-                    <option>Crisper Drawer</option>
-                  </select>
-                </div>
-
-                <button className="btn-primary" type="submit" style={{ marginTop: 18 }}>Add to Fridge</button>
-              </form>
-            )}
+            <form className="modal-form" onSubmit={handleAddIngredient}>
+              <label>
+                Name
+                <input
+                  type="text"
+                  value={newIngredient.name}
+                  onChange={(e) =>
+                    setNewIngredient({ ...newIngredient, name: e.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label>
+                Unit
+                <input
+                  type="text"
+                  value={newIngredient.unit}
+                  onChange={(e) =>
+                    setNewIngredient({ ...newIngredient, unit: e.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label>
+                Nutritional Info (JSON)
+                <input
+                  type="text"
+                  placeholder='{"fat":"4g","protein":"6g","calories":75}'
+                  value={newIngredient.nutritionalInfo}
+                  onChange={(e) =>
+                    setNewIngredient({
+                      ...newIngredient,
+                      nutritionalInfo: e.target.value,
+                    })
+                  }
+                />
+              </label>
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn primary">
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </div>
   );
 }
-// ...existing code...

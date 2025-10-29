@@ -97,6 +97,43 @@
   box-shadow: 0 10px 24px rgba(231, 111, 0, 0.12);
   background: var(--accent-dark);
 }
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a; /* Màu chữ đen đậm */
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.user-info img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f7efe2;
+}
+
+.user-info span {
+  color: #0f172a;
+}
+
+.user-info:hover span {
+  color: var(--accent); /* Khi hover, đổi màu cam như accent */
+}
+
+@media (max-width: 720px) {
+  .user-info {
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .user-info img {
+    width: 30px;
+    height: 30px;
+  }
+}
 
 @media (max-width: 720px) {
   .nav-inner {

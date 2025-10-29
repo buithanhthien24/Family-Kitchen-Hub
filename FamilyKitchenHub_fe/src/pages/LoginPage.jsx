@@ -5,6 +5,8 @@ import Lottie from "lottie-react";
 import loadingAnimation from "../assets/cooking animation.json";
 import "../styles/LoginForm.css";
 import axios from "../hooks/axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,25 +25,48 @@ export default function LoginPage() {
         password: password,
       });
 
-      console.log(" Login success:", res.data);
+      console.log("Login success:", res.data);
 
+      // Lưu token + user vào localStorage
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
       }
       if (res.data.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
       }
-      navigate("/home");
+
+      // Giữ animation 3s rồi hiển toast và reload trang
+      setTimeout(() => {
+        setIsLoading(false);
+        toast.success("Login successful! Redirecting...", {
+          position: "top-center",
+          autoClose: 1500,
+        });
+
+        // Đợi toast hiện 1.5s rồi chuyển trang và reload
+        setTimeout(() => {
+          window.location.href = "/home";
+        }, 1500);
+      }, 3000);
     } catch (err) {
       console.error("Login failed:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Login failed, please try again!");
-    } finally {
-      setIsLoading(false);
+
+      setTimeout(() => {
+        setIsLoading(false);
+        toast.error(
+          err.response?.data?.message || "Login failed, please try again!",
+          {
+            position: "top-right",
+            autoClose: 2000,
+          }
+        );
+      }, 3000);
     }
   };
 
   return (
     <AuthLayout>
+      <ToastContainer />
       {isLoading ? (
         <div className="loading-overlay">
           <Lottie

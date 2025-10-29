@@ -7,15 +7,17 @@ import {
   Share2,
   Trash2,
   LogOut,
+  User,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const TABS = [
-  { label: "Dashboard", path: "/manage", icon: <LayoutDashboard size={18} /> },
+  { label: "Dashboard", path: "/manage/Dashboard", icon: <LayoutDashboard size={18} /> },
   { label: "Recipes", path: "/manage/recipes", icon: <BookOpen size={18} /> },
   { label: "Fridge", path: "/manage/fridge", icon: <Snowflake size={18} /> },
   { label: "Shared", path: "/manage/shared", icon: <Share2 size={18} /> },
   { label: "Deleted", path: "/manage/deleted", icon: <Trash2 size={18} /> },
+  { label: "Edit Profile", path: "/manage/editprofile", icon: <User size={18} /> },
 ];
 
 export default function Sidebar() {

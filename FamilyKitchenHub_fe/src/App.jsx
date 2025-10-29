@@ -7,8 +7,10 @@ import ManageLayouts from "./pages/ManagesLayout";
 import Recipes from "./components/dashboard/Recipes";
 import Fridge from "./components/dashboard/Fridge";
 import "./App.css";
+import IngredientListScreen from "./components/IngredientListScreen";
+import EditProfile from "./components/EditProfile";
 
-function App() {
+function App() {  
   return (
     <BrowserRouter>
       <Routes>
@@ -22,9 +24,10 @@ function App() {
         {/* Dùng ManageLayouts cho các trang quản lý */}
         <Route path="/manage/*" element={<ManageLayouts />}>
           {/* Các trang con quản lý */}
-          {/* <Route path='/' index element={<div>Manage Dashboard</div>} /> */}
+          <Route path="Dashboard" element={<IngredientListScreen />} />
           <Route path="fridge" element={<Fridge />} />
           <Route path="recipes" element={<Recipes/>} />
+          <Route path="editprofile" element={<EditProfile />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,61 +1,7 @@
 import React, { useEffect, useState } from "react";
+import axios from "../../hooks/axios";
 import "./../../styles/FamilyProfile.css";
-import { Pen, Trash2, PlusCircle } from "lucide-react"; // or any icons you prefer
-
-const SAMPLE = [
-  {
-    id: 1,
-    name: "John Smith",
-    age: 35,
-    gender: "male",
-    activity: "moderate",
-    weightKg: 75,
-    heightCm: 178,
-    allergies: ["Nuts", "Shellfish"],
-    dietary: [],
-    goals: ["Weight Loss", "Heart Health"],
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Sarah Smith",
-    age: 32,
-    gender: "female",
-    activity: "active",
-    weightKg: 62,
-    heightCm: 165,
-    allergies: ["Dairy"],
-    dietary: ["Dairy-Free"],
-    goals: ["Better Digestion", "Increased Energy"],
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Emily Smith",
-    age: 8,
-    gender: "female",
-    activity: "active",
-    weightKg: 28,
-    heightCm: 130,
-    allergies: ["Peanuts"],
-    dietary: [],
-    goals: ["Healthy Growth"],
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Michael Smith",
-    age: 65,
-    gender: "male",
-    activity: "light",
-    weightKg: 80,
-    heightCm: 175,
-    allergies: [],
-    dietary: [],
-    goals: ["Lower Cholesterol", "Heart Health", "Diabetes Management"],
-    status: "light",
-  },
-];
+import { Pen, Trash2, PlusCircle } from "lucide-react";
 
 function calcBMI(weightKg, heightCm) {
   if (!weightKg || !heightCm) return null;
@@ -73,304 +19,225 @@ function bmiCategory(bmi) {
 }
 
 export default function FamilyProfiles() {
-  const [members, setMembers] = useState(() => {
-    const raw = localStorage.getItem("familyProfiles");
-    return raw ? JSON.parse(raw) : [];
-  });
+  const [members, setMembers] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [editing, setEditing] = useState(null); // null | member object
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     name: "",
     age: "",
-    gender: "male",
-    activity: "",
-    weightKg: "",
-    heightCm: "",
-    allergies: "",
-    dietary: "",
-    goals: "",
-    status: "active",
+    healthGoals: "",
+    notes: "",
   });
 
+  // Fetch API thật khi load trang
   useEffect(() => {
-    localStorage.setItem("familyProfiles", JSON.stringify(members));
-  }, [members]);
-
-  useEffect(() => {
-    // if editing changes, populate form
-    if (editing) {
-      setForm({
-        name: editing.name || "",
-        age: editing.age || "",
-        gender: editing.gender || "male",
-        activity: editing.activity || "",
-        weightKg: editing.weightKg || "",
-        heightCm: editing.heightCm || "",
-        allergies: (editing.allergies || []).join(", "),
-        dietary: (editing.dietary || []).join(", "),
-        goals: (editing.goals || []).join(", "),
-        status: editing.status || "active",
-      });
-      setIsOpen(true);
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      console.warn(" Chưa có token, vui lòng đăng nhập!");
+      return;
     }
-  }, [editing]);
 
-  function resetForm() {
-    setForm({
-      name: "",
-      age: "",
-      gender: "male",
-      activity: "",
-      weightKg: "",
-      heightCm: "",
-      allergies: "",
-      dietary: "",
-      goals: "",
-      status: "active",
-    });
-  }
+    axios
+      .get("/family-members", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        console.log(" Family members:", res.data);
+        setMembers(res.data);
+      })
+      .catch((err) => {
+        console.error("Lỗi khi lấy danh sách:", err.response || err.message || err);
+      });
+  }, []);
 
-  function openAdd() {
-    setEditing(null);
-    resetForm();
-    setIsOpen(true);
-  }
-
-  function closeModal() {
-    setIsOpen(false);
-    setEditing(null);
-    resetForm();
-  }
-
+  // Form handler
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
   }
 
-  function parseTags(raw) {
-    if (!raw) return [];
-    return raw
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t.length);
-  }
-
-  function handleSave(e) {
+  function handleAdd(e) {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Chưa đăng nhập!");
+    const user = JSON.parse(localStorage.getItem("user"));
+
     const payload = {
-      name: form.name.trim(),
-      age: Number(form.age) || null,
-      gender: form.gender,
-      activity: form.activity,
-      weightKg: form.weightKg ? Number(form.weightKg) : null,
-      heightCm: form.heightCm ? Number(form.heightCm) : null,
-      allergies: parseTags(form.allergies),
-      dietary: parseTags(form.dietary),
-      goals: parseTags(form.goals),
-      status: form.status,
+      userId: user?.id,
+      name: form.name,
+      age: parseInt(form.age) || null,
+      healthGoals: form.healthGoals,
+      notes: form.notes,
+      allergies: [],
     };
 
-    if (!payload.name) {
-      alert("Please enter a name.");
-      return;
-    }
-
-    if (editing) {
-      setMembers((prev) =>
-        prev.map((m) => (m.id === editing.id ? { ...m, ...payload } : m))
-      );
-    } else {
-      const newMember = {
-        id: Date.now(),
-        ...payload,
-      };
-      setMembers((prev) => [newMember, ...prev]);
-    }
-    closeModal();
-  }
-
-  function handleEdit(member) {
-    setEditing(member);
+    axios
+      .post("/family-members", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setMembers((prev) => [...prev, res.data]);
+        closeModal();
+      })
+      .catch((err) => {
+        console.error("Lỗi khi thêm thành viên:", err);
+        alert("Không thể thêm thành viên!");
+      });
   }
 
   function handleDelete(id) {
-    if (!window.confirm("Delete this family member?")) return;
-    setMembers((prev) => prev.filter((m) => m.id !== id));
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Chưa đăng nhập!");
+
+    if (!window.confirm("Xóa thành viên này?")) return;
+    axios
+      .delete(`/family-members/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(() => setMembers((prev) => prev.filter((m) => m.id !== id)))
+      .catch((err) => {
+        console.error(" Lỗi khi xóa:", err);
+        alert("Không thể xóa!");
+      });
   }
 
-  function loadSample() {
-    // make copies with unique ids
-    const withIds = SAMPLE.map((s) => ({ ...s, id: Date.now() + Math.random() * 10000 }));
-    setMembers(withIds);
+  function openModal() {
+    setForm({ name: "", age: "", healthGoals: "", notes: "" });
+    setIsOpen(true);
   }
 
-  function clearAll() {
-    if (!window.confirm("Clear all family members?")) return;
-    setMembers([]);
+  function closeModal() {
+    setIsOpen(false);
   }
 
   return (
     <div className="family-profiles-wrap">
       <div className="profiles-header">
         <div>
-          <h1>Family Profiles</h1>
-          <p className="muted">Manage family members' health preferences and dietary needs</p>
+          <h1>Family Members</h1>
+          <p className="muted">Manage your family members' info</p>
         </div>
-        <div className="header-actions">
-          <button className="btn ghost" onClick={loadSample}>Load Sample Data</button>
-          <button className="btn danger" onClick={clearAll}>Clear All</button>
-          <button className="btn primary" onClick={openAdd}>
-            <PlusCircle size={16} /> <span>Add Family Member</span>
-          </button>
-        </div>
+        <button className="btn primary" onClick={openModal}>
+          <PlusCircle size={16} /> Add Member
+        </button>
       </div>
 
       <div className="cards-grid">
-        {members.length === 0 && (
-          <div className="empty">No members yet — click “Add Family Member” or load sample data.</div>
-        )}
-
-        {members.map((m) => {
-          const bmi = calcBMI(m.weightKg, m.heightCm);
-          const cat = bmiCategory(bmi);
-          return (
+        {members.length === 0 ? (
+          <div className="empty">No family members yet.</div>
+        ) : (
+          members.map((m) => (
             <div key={m.id} className="profile-card">
               <div className="card-top">
-                <div className="avatar">{m.name.split(" ").map(n => n[0]).slice(0,2).join("").toUpperCase()}</div>
+                <div className="avatar">
+                  {m.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
+                </div>
                 <div className="meta">
-                  <div className="name-row">
-                    <h3>{m.name}</h3>
-                    <div className="actions">
-                      <button onClick={() => handleEdit(m)} className="icon-btn"><Pen size={14} /></button>
-                      <button onClick={() => handleDelete(m.id)} className="icon-btn delete"><Trash2 size={14} /></button>
-                    </div>
-                  </div>
-                  <div className="sub">{m.age || "--"} years • {m.gender} • {m.activity || "—"}</div>
+                  <h3>{m.name}</h3>
+                  <p className="sub">
+                    {m.age ? `${m.age} tuổi` : "—"} • {m.userName}
+                  </p>
+                </div>
+                <div className="actions">
+                  <button
+                    onClick={() => handleDelete(m.id)}
+                    className="icon-btn delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
 
               <div className="card-body">
-                <div className="row">
-                  <div className="bmi">
-                    <span className="muted">BMI:</span>{" "}
-                    {bmi ? (
-                      <><strong>{bmi}</strong> <span className={`bmi-tag ${cat.color}`}>({cat.label})</span></>
-                    ) : <span className="muted">—</span>}
-                  </div>
-
-                  <div className="vitals">
-                    <span className="muted">♥</span> {m.weightKg ? `${m.weightKg}kg` : "--"} • {m.heightCm ? `${m.heightCm}cm` : "--"}
-                  </div>
-                </div>
-
-                {m.allergies?.length > 0 && (
-                  <div className="section">
-                    <div className="section-title">Allergies</div>
-                    <div className="chips">
-                      {m.allergies.map((a, idx) => <span key={idx} className="chip danger">{a}</span>)}
-                    </div>
-                  </div>
-                )}
-
-                {m.dietary?.length > 0 && (
-                  <div className="section">
-                    <div className="section-title">Dietary Preferences</div>
-                    <div className="chips">{m.dietary.map((d, idx) => <span key={idx} className="chip">{d}</span>)}</div>
-                  </div>
-                )}
-
-                {m.goals?.length > 0 && (
-                  <div className="section">
-                    <div className="section-title">Health Goals</div>
-                    <div className="chips">{m.goals.map((g, idx) => <span key={idx} className="chip outline">{g}</span>)}</div>
-                  </div>
-                )}
+                <p>
+                  <strong>Mục tiêu sức khỏe:</strong>{" "}
+                  {m.healthGoals || "Không có"}
+                </p>
+                <p>
+                  <strong>Ghi chú:</strong> {m.notes || "Không có"}
+                </p>
               </div>
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
 
-      {/* Modal */}
-      {isOpen && (
-        <div className="modal-overlay" onMouseDown={closeModal}>
-          <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{editing ? "Edit Family Member" : "Add Family Member"}</h3>
-              <button className="modal-close" onClick={closeModal}>✕</button>
-            </div>
+{isOpen && (
+  <div className={`modal-overlay ${isOpen ? "active" : ""}`}>
+    <div className="modal">
+      <div className="modal-header">
+        <h3>Add Member</h3>
+        <button className="icon-btn" onClick={closeModal}>
+          ✕
+        </button>
+      </div>
 
-            <form className="modal-form" onSubmit={handleSave}>
-              <div className="form-grid">
-                <label>
-                  Name
-                  <input name="name" value={form.name} onChange={handleChange} />
-                </label>
-                <label>
-                  Age
-                  <input name="age" type="number" value={form.age} onChange={handleChange} />
-                </label>
-              </div>
+      <form className="modal-form" onSubmit={handleAdd}>
+        <label>
+          Name
+          <input
+            type="text"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="e.g. Huy Vo"
+            required
+          />
+        </label>
 
-              <div className="form-grid">
-                <label>
-                  Gender
-                  <select name="gender" value={form.gender} onChange={handleChange}>
-                    <option value="male">male</option>
-                    <option value="female">female</option>
-                    <option value="other">other</option>
-                  </select>
-                </label>
-
-                <label>
-                  Activity
-                  <input name="activity" value={form.activity} onChange={handleChange} placeholder="e.g. moderate, active, light" />
-                </label>
-              </div>
-
-              <div className="form-grid">
-                <label>
-                  Weight (kg)
-                  <input name="weightKg" type="number" value={form.weightKg} onChange={handleChange} />
-                </label>
-                <label>
-                  Height (cm)
-                  <input name="heightCm" type="number" value={form.heightCm} onChange={handleChange} />
-                </label>
-              </div>
-
-              <label>
-                Allergies (comma separated)
-                <input name="allergies" value={form.allergies} onChange={handleChange} placeholder="Peanuts, Shellfish" />
-              </label>
-
-              <label>
-                Dietary preferences (comma separated)
-                <input name="dietary" value={form.dietary} onChange={handleChange} placeholder="Dairy-Free, Vegetarian" />
-              </label>
-
-              <label>
-                Health goals (comma separated)
-                <input name="goals" value={form.goals} onChange={handleChange} placeholder="Weight Loss, Better Digestion" />
-              </label>
-
-              <label>
-                Status
-                <select name="status" value={form.status} onChange={handleChange}>
-                  <option value="active">active</option>
-                  <option value="light">light</option>
-                  <option value="inactive">inactive</option>
-                </select>
-              </label>
-
-              <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-                <button type="button" className="btn ghost" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="btn primary">{editing ? "Save changes" : "Add member"}</button>
-              </div>
-            </form>
-          </div>
+        <div className="form-grid">
+          <label>
+            Age
+            <input
+              type="number"
+              name="age"
+              value={form.age}
+              onChange={handleChange}
+              placeholder="e.g. 25"
+            />
+          </label>
+          <label>
+            Health Goals
+            <input
+              type="text"
+              name="healthGoals"
+              value={form.healthGoals}
+              onChange={handleChange}
+              placeholder="e.g. Lose weight"
+            />
+          </label>
         </div>
-      )}
+
+        <label>
+          Notes
+          <textarea
+            name="notes"
+            value={form.notes}
+            onChange={handleChange}
+            placeholder="e.g. Allergic to dairy"
+          />
+        </label>
+
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={closeModal}
+          >
+            Cancel
+          </button>
+          <button type="submit" className="btn primary">
+            Save Member
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

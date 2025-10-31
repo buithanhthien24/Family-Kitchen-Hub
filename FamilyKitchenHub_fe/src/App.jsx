@@ -10,11 +10,16 @@ import DetailRecipes from "./components/dashboard/DetailRecipes";
 import "./App.css";
 import IngredientListScreen from "./components/IngredientListScreen";
 import EditProfile from "./components/EditProfile";
-
+import RegisterPage from "./pages/RegisterPage";
+import VerifyEmail from "./pages/VerifyEmail";
+import FamilyProfiles from "./components/dashboard/FamilyProfile";
+import MealPlanner from "./components/dashboard/MealPlaner";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 function App() {  
   return (
     <BrowserRouter>
-     <ToastContainer position="top-right" autoClose={3000} />
+        <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         
         {/* Dùng MainLayout làm layout chính */}

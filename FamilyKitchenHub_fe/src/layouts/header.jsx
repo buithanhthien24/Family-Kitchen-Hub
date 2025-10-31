@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { Link as MuiLink } from "@mui/material";
 export default function Header() {
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+  
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -80,15 +80,7 @@ export default function Header() {
                 Sign In
               </Link>
             )}
-            <MuiLink component={Link} to="/home" className="active">
-              Home
-            </MuiLink>
-            <a href="#">Features</a>
-            <a href="#">Tools</a>
-            <a href="#">Get Started</a>
-            <MuiLink component={Link} to="/login" className="btn-signin" role="button">
-              Sign In
-            </MuiLink>
+
           </nav>
         </div>
       </header>

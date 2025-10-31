@@ -111,3 +111,8 @@
   color: var(--accent-dark);
   transform: translateX(2px);
 }
+
+.tab-btn:hover {
+  background: rgba(251, 146, 60, 0.2); /* màu cam nhẹ */
+  color: #111827;
+}

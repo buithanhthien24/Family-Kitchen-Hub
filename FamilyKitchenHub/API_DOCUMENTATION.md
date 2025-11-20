@@ -150,6 +150,13 @@ Tài liệu này tổng hợp tất cả các API endpoints trong hệ thống F
 - **Path Parameters:** `id` (Long) - ID của nguyên liệu cần xóa
 - **Response:** 204 No Content (xóa thành công)
 
+### 3.6. Tìm kiếm nguyên liệu theo tên (phục vụ combobox)
+- **Link API:** `GET http://localhost:8080/api/ingredients/search?keyword={keyword}`
+- **Chức năng:** Tìm kiếm nguyên liệu theo tên (không phân biệt hoa thường, hỗ trợ partial match) để hiển thị combobox/auto-complete trên FE, ví dụ gõ "ga" sẽ trả về "Gà ta (kg)"...
+- **Query Parameters:** `keyword` (String) - Chuỗi bất kỳ mà người dùng nhập (ít nhất 1 ký tự)
+- **Response:** `List<Ingredient>` chứa các nguyên liệu phù hợp (200 OK)
+- **Ví dụ:** `GET http://localhost:8080/api/ingredients/search?keyword=ga`
+
 ---
 
 ## 4. Inventory APIs - Quản Lý Tủ Lạnh Ảo
@@ -157,7 +164,7 @@ Tài liệu này tổng hợp tất cả các API endpoints trong hệ thống F
 ### 4.1. Thêm nguyên liệu vào tủ lạnh ảo
 - **Link API:** `POST http://localhost:8080/api/inventory`
 - **Chức năng:** Thêm một nguyên liệu vào tủ lạnh ảo của người dùng với số lượng và ngày hết hạn cụ thể.
-- **Request Body:** `InventoryItemDTO` (userId, ingredientId, quantity, expirationDate)
+  - **Request Body:** `InventoryItemDTO` (userId, ingredientId, quantity, expirationD                                                                                                                                       ate)
 - **Response:** `InventoryItem` chứa thông tin item đã thêm (201 Created)
 
 ### 4.2. Xem danh sách nguyên liệu trong tủ lạnh ảo
@@ -192,6 +199,8 @@ Tài liệu này tổng hợp tất cả các API endpoints trong hệ thống F
   - `userId` (Long) - ID người dùng thực hiện nấu ăn
   - `recipeId` (Long) - ID công thức nấu ăn
 - **Response:** Thông báo thành công (200 OK) hoặc lỗi thiếu nguyên liệu (400 Bad Request) hoặc không tìm thấy (404 Not Found)
+
+> **Lưu ý:** Các API Inventory hiện trả về `InventoryItemResponseDTO`, trong đó bao gồm sẵn `ingredientName`, `unit`, `quantity` và `expirationDate` để giao diện hiển thị trực tiếp.
 
 ---
 

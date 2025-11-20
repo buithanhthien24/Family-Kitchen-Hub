@@ -27,17 +27,16 @@ public class InventoryItemController {
     @PostMapping
     public ResponseEntity<InventoryItem> createItem(@RequestBody InventoryItemDTO itemDTO) {
         InventoryItem item = new InventoryItem();
-        // Item entity cần có User và Ingredient được thiết lập trong Service
+        // Thiết lập các trường đơn giản trước khi lưu
+        item.setQuantity(itemDTO.getQuantity());
+        item.setExpirationDate(itemDTO.getExpirationDate());
 
+        // Item entity cần có User và Ingredient được thiết lập trong Service
         InventoryItem newItem = inventoryItemService.createInventoryItem(
                 item,
                 itemDTO.getUserId(),
                 itemDTO.getIngredientId()
         );
-
-        // Copy các trường còn lại (quantity, expirationDate)
-        newItem.setQuantity(itemDTO.getQuantity());
-        newItem.setExpirationDate(itemDTO.getExpirationDate());
 
         return new ResponseEntity<>(newItem, HttpStatus.CREATED); // 201 Created
     }

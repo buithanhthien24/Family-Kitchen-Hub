@@ -42,17 +42,7 @@ export default function Sidebar() {
     }
   }, [location]);
 
-  const handleLogout = () => {
-    // Xoá token hoặc dữ liệu đăng nhập
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
 
-    // Có thể thêm thông báo nếu muốn
-    alert("You have been logged out!");
-
-    // Điều hướng về trang login
-    navigate("/login");
-  };
 
   return (
     <div className="sidebar-tab-switcher-outer">
@@ -75,11 +65,7 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Nút Logout */}
-      <Link to="/home" className="tab-logout-btn" onClick={handleLogout}>
-        <LogOut size={18} />
-        <span>Logout</span>
-      </Link>
+
     </div>
   );
 }

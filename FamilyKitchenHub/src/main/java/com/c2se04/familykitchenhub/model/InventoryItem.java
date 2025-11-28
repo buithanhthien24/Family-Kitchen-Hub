@@ -35,7 +35,6 @@ public class InventoryItem {
     @Column(name = "expiration_date")
     private LocalDate expirationDate;
 
-<<<<<<< HEAD
     @Column(name = "purchased_at")
     private LocalDate purchasedAt;
 
@@ -48,14 +47,11 @@ public class InventoryItem {
     @Column(name = "expiration_acknowledged_at")
     private LocalDateTime expirationAcknowledgedAt;
 
-    // --- Constructors, Getters, and Setters ---
-=======
     // [MỚI] Thời gian nhập kho
     @Column(name = "added_at")
     private LocalDateTime addedAt;
 
-    // --- Constructors ---
->>>>>>> e178b5062c07b70000782a2df78d7d1baeea9406
+    // --- Constructors, Getters, and Setters ---
 
     public InventoryItem() {
     }
@@ -115,7 +111,6 @@ public class InventoryItem {
         this.expirationDate = expirationDate;
     }
 
-<<<<<<< HEAD
     public LocalDate getPurchasedAt() {
         return purchasedAt;
     }
@@ -147,8 +142,7 @@ public class InventoryItem {
     public void setExpirationAcknowledgedAt(LocalDateTime expirationAcknowledgedAt) {
         this.expirationAcknowledgedAt = expirationAcknowledgedAt;
     }
-}
-=======
+
     public LocalDateTime getAddedAt() {
         return addedAt;
     }
@@ -157,4 +151,3 @@ public class InventoryItem {
         this.addedAt = addedAt;
     }
 }
->>>>>>> e178b5062c07b70000782a2df78d7d1baeea9406

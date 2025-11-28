@@ -1,6 +1,7 @@
 package com.c2se04.familykitchenhub.model;
 
 import com.c2se04.familykitchenhub.enums.DifficultyLevel;
+import com.c2se04.familykitchenhub.enums.MealType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,6 +44,10 @@ public class Recipe {
     @Enumerated(EnumType.STRING)
     @Column(name = "difficulty_level")
     private DifficultyLevel difficultyLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "meal_type")
+    private MealType mealType;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -144,6 +149,14 @@ public class Recipe {
 
     public void setDifficultyLevel(DifficultyLevel difficultyLevel) {
         this.difficultyLevel = difficultyLevel;
+    }
+
+    public MealType getMealType() {
+        return mealType;
+    }
+
+    public void setMealType(MealType mealType) {
+        this.mealType = mealType;
     }
 
     public String getImageUrl() {

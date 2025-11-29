@@ -2,33 +2,42 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../hooks/axios";
 import "./../../styles/Recipes.css";
+import bgRecipes from "../../assets/recipebg.jpg";
+import RecipesBook from '../../assets/recipe-book.png';
 import {
   Heart,
   HeartOff,
   Trash2,
-  Clock,
-  Users,
-  ChefHat,
   PlusCircle,
   X,
 } from "lucide-react";
 
 export default function RecipeDashboard() {
   const navigate = useNavigate();
-  const [recipes, setRecipes] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [form, setForm] = useState({
+  const token = localStorage.getItem("token");
+
+  // =========================
+  //  FORM DEFAULT – LUÔN ĐỒNG BỘ
+  // =========================
+  const defaultForm = {
     title: "",
     instructions: "",
     cookingTimeMinutes: "",
     servings: "",
-    imageUrl: "", // 🟢 đổi từ imageFile sang imageUrl
-  });
+    imageUrl: "",
+    ingredients: [], // ✔️ luôn tồn tại
+  };
+
+  const [recipes, setRecipes] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [form, setForm] = useState(defaultForm);
   const [preview, setPreview] = useState(null);
 
-  const token = localStorage.getItem("token");
-  const [allIngredients, setAllIngredients] = useState([]); // ✅ danh sách từ API
+  const [allIngredients, setAllIngredients] = useState([]);
 
+  // =========================
+  //   LOAD INGREDIENTS (1 LẦN)
+  // =========================
   useEffect(() => {
     const fetchIngredients = async () => {
       try {
@@ -42,9 +51,14 @@ export default function RecipeDashboard() {
       }
     };
 
-    if (isOpen) fetchIngredients(); // chỉ gọi khi modal mở
-  }, [isOpen]);
-  // Lấy danh sách công thức
+    if (allIngredients.length === 0) {
+      fetchIngredients(); // ✔️ chỉ gọi 1 lần
+    }
+  }, []);
+
+  // =========================
+  //   LOAD RECIPES
+  // =========================
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
@@ -59,34 +73,36 @@ export default function RecipeDashboard() {
     fetchRecipes();
   }, [token]);
 
-  //  Mở / đóng modal
+  // =========================
+  //   MODAL OPEN/CLOSE
+  // =========================
   const openModal = () => {
-    setForm({
-      title: "",
-      instructions: "",
-      cookingTimeMinutes: "",
-      servings: "",
-      imageUrl: "",
-    });
+    setForm(defaultForm);   // ✔ RESET DÒNG 1
     setPreview(null);
     setIsOpen(true);
   };
+
   const closeModal = () => setIsOpen(false);
 
-  // Xử lý nhập liệu
+  // =========================
+  //   HANDLE INPUT CHANGE
+  // =========================
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setForm((prev) => ({ ...prev, [name]: value }));
 
-    // 🖼️ Nếu người dùng nhập imageUrl thì hiển thị preview
     if (name === "imageUrl") {
       setPreview(value || null);
     }
   };
 
-  // Gửi JSON request
+  // =========================
+  //   ADD RECIPE
+  // =========================
   const handleAdd = async (e) => {
     e.preventDefault();
+
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Missing auth token");
@@ -98,8 +114,8 @@ export default function RecipeDashboard() {
           ? Number(form.cookingTimeMinutes)
           : undefined,
         servings: form.servings ? Number(form.servings) : undefined,
-        imageUrl: form.imageUrl || null, //  chỉ gửi link ảnh
-        ingredients: (form.ingredients || []).map((i) => ({
+        imageUrl: form.imageUrl || null,
+        ingredients: form.ingredients.map((i) => ({
           ingredientId: Number(i.ingredientId),
           quantity: Number(i.quantity) || 0,
           unit: i.unit || "phần",
@@ -114,23 +130,33 @@ export default function RecipeDashboard() {
       });
 
       setRecipes((prev) => [res.data, ...prev]);
-      closeModal();
-      setForm({
-        title: "",
-        instructions: "",
-        cookingTimeMinutes: "",
-        servings: "",
-        imageUrl: "",
-      });
+
+      // RESET FORM
+      setForm(defaultForm);
       setPreview(null);
+      closeModal();
+
       alert("Thêm công thức thành công!");
     } catch (err) {
       console.error("Lỗi khi thêm recipe:", err.response || err);
-      const msg =
-        err.response?.data?.message ||
-        err.message ||
-        "Không thể thêm công thức.";
-      alert(msg);
+      alert(err.response?.data?.message || "Không thể thêm công thức.");
+    }
+  };
+
+  // =========================
+  //   DELETE RECIPE
+  // =========================
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa công thức này?")) return;
+
+    try {
+      await axios.delete(`/recipes/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setRecipes((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      console.error("❌ Lỗi khi xóa recipe:", err);
     }
   };
 
@@ -138,65 +164,67 @@ export default function RecipeDashboard() {
     navigate(`/manage/recipes/${id}`);
   };
 
-  //  Xóa công thức
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa công thức này?")) return;
-    try {
-      await axios.delete(`/recipes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setRecipes((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      console.error(" Lỗi khi xóa recipe:", err);
-    }
-  };
-
   return (
     <div className="recipe-dashboard">
-      {/* Header */}
+
+      {/* HEADER */}
       <header className="recipe-header">
-        <div className="title-wrap">
-          <h1>🍽️ Your Favorite Recipes</h1>
-          <p>Discover and cook delicious meals for your family.</p>
-        </div>
+
+              {/* Welcome Section */}
+              <div className="welcome-section_recipe"
+              style={{
+                backgroundImage: `url(${bgRecipes})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                height: "110vh",
+              }}>
+                <div className="welcome-recipe-text">
+                  <h1>Make a recipe just for you</h1>
+                  <p>Keep your ingredients fresh and reduce food waste</p>
+                </div>
+              </div>
         <button className="add-btn" onClick={openModal}>
           <PlusCircle size={16} /> Add Recipe
         </button>
       </header>
 
-      {/* Recipe Grid */}
+      {/* GRID */}
       <div className="recipe-grid">
         {recipes.length === 0 ? (
-          <div className="empty">No recipes found.</div>
+          <div className="empty">No recipes yet. Create one!</div>
         ) : (
           recipes.map((r) => (
             <div
-              className="recipe-card"
               key={r.id}
-              role="button"
-              tabIndex={0}
+              className="recipe-card"
               onClick={() => handleCardClick(r.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") handleCardClick(r.id);
-              }}
             >
-              <div className="card-image">
-                <img src={r.imageUrl} alt={r.title} />
-                <span className="category-tag">Recipe</span>
+              {/* IMAGE */}
+              <div className="card-image-side">
+                <img
+                  src={r.imageUrl || "/placeholder-recipe.jpg"}
+                  alt={r.title}
+                />
               </div>
-              <div className="card-body">
+
+              {/* CONTENT */}
+              <div className="card-content-side">
                 <div className="card-header">
-                  <h3>{r.title}</h3>
+                  <div>
+                    <h3>{r.title}</h3>
+                    <p className="card-price">{r.servings} servings</p>
+                  </div>
+
                   <div className="card-actions">
                     {r.favorite ? (
                       <Heart color="red" size={18} />
                     ) : (
                       <HeartOff size={18} />
                     )}
+
                     <Trash2
                       color="gray"
                       size={18}
-                      className="delete-icon"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(r.id);
@@ -205,86 +233,94 @@ export default function RecipeDashboard() {
                   </div>
                 </div>
 
-                <p className="desc">{r.instructions}</p>
+                <p className="card-desc">{r.instructions}</p>
 
-                <div className="card-info">
-                  <div className="info-icons">
-                    <Clock size={16} /> <span>{r.cookingTimeMinutes} phút</span>
-                    <Users size={16} /> <span>{r.servings} người</span>
-                    <ChefHat size={16} /> <span>Ready!</span>
-                  </div>
+                <div className="card-meta">
+                  <span>⏱ {r.cookingTimeMinutes} min</span>
                 </div>
+
+                <button
+                  className="btn-add"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCardClick(r.id);
+                  }}
+                >
+                  + Đặt
+                </button>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Modal Add */}
+      {/* =============================
+            MODAL ADD RECIPE
+      ============================== */}
       {isOpen && (
-        <div className={`modal-overlay ${isOpen ? "active" : ""}`}>
-          <div className="modal">
-            <div className="modal-header">
-              <h3>Add Recipe</h3>
-              <button className="icon-btn" onClick={closeModal}>
+        <div className={`fh-modal-overlay ${isOpen ? "fh-active" : ""}`}>
+          <div className="fh-modal">
+            <div className="fh-modal-header">
+              <img className="fh-recipesBook" src={RecipesBook} alt="" />
+              <h3 className="fh-modal-title">Add Recipe</h3>
+              {/* <button className="fh-icon-btn" onClick={closeModal}>
                 <X />
-              </button>
+              </button> */}
             </div>
 
-            <form className="recipe-modal-form" onSubmit={handleAdd}>
-              <label className="recipe-label">
+            <form className="fh-modal-form" onSubmit={handleAdd}>
+              <label className="fh-recipe-label">
+                
                 Title
                 <input
+                placeholder=""
                   type="text"
                   name="title"
                   value={form.title}
                   onChange={handleChange}
-                  placeholder="e.g. Fried Chicken"
                   required
-                  className="recipe-input"
+                  className="fh-recipe-input"
                 />
               </label>
 
-              <label className="recipe-label">
+              <label className="fh-recipe-label">
                 Instructions
                 <textarea
+                  placeholder=""
                   name="instructions"
                   value={form.instructions}
                   onChange={handleChange}
-                  placeholder="e.g. Mix ingredients and fry until golden..."
                   required
-                  className="recipe-textarea"
+                  className="fh-recipe-textarea"
                 />
               </label>
 
-              <div className="recipe-form-grid">
-                <label className="recipe-label">
+              <div className="fh-recipe-form-grid">
+                <label className="fh-recipe-label">
                   Time (minutes)
                   <input
+                  placeholder="30 minutes"
                     type="number"
                     name="cookingTimeMinutes"
                     value={form.cookingTimeMinutes}
                     onChange={handleChange}
-                    placeholder="e.g. 30"
-                    className="recipe-input"
+                    className="fh-recipe-input"
                   />
                 </label>
 
-                <label className="recipe-label">
+                <label className="fh-recipe-label">
                   Servings
                   <input
                     type="number"
                     name="servings"
                     value={form.servings}
                     onChange={handleChange}
-                    placeholder="e.g. 4"
-                    className="recipe-input"
+                    className="fh-recipe-input"
                   />
                 </label>
               </div>
 
-              {/* 🟢 Thay phần chọn file bằng nhập URL */}
-              <label className="recipe-label">
+              <label className="fh-recipe-label">
                 Image URL
                 <input
                   type="text"
@@ -292,27 +328,29 @@ export default function RecipeDashboard() {
                   value={form.imageUrl}
                   onChange={handleChange}
                   placeholder="https://example.com/image.jpg"
-                  className="recipe-input"
+                  className="fh-recipe-input"
                 />
               </label>
 
               {preview && (
-                <div className="recipe-image-preview">
-                  <img src={preview} alt="Preview" className="recipe-image" />
+                <div className="fh-recipe-image-preview">
+                  <img src={preview} alt="Preview" className="fh-recipe-image" />
                 </div>
               )}
-              {/* 🧄 🧩 THÊM PHẦN NÀY NGAY Ở ĐÂY */}
-              <div className="ingredients-section">
-                <div className="ingredients-header">
-                  <h4>Ingredients</h4>
+
+              {/* INGREDIENTS */}
+              <div className="fh-ingredients-section">
+                <div className="fh-ingredients-header">
+                  <h4 className="fh-ingredients-title">Ingredients</h4>
+
                   <button
                     type="button"
-                    className="add-ingredient-btn"
+                    className="fh-add-ingredient-btn"
                     onClick={() =>
                       setForm((prev) => ({
                         ...prev,
                         ingredients: [
-                          ...(prev.ingredients || []),
+                          ...prev.ingredients,
                           { ingredientId: "", quantity: "" },
                         ],
                       }))
@@ -322,19 +360,20 @@ export default function RecipeDashboard() {
                   </button>
                 </div>
 
-                {(form.ingredients || []).map((ing, index) => (
-                  <div key={index} className="ingredient-row">
+                {form.ingredients.map((ing, index) => (
+                  <div key={index} className="fh-ingredient-row">
                     <select
                       value={ing.ingredientId}
                       onChange={(e) => {
-                        const newIngredients = [...form.ingredients];
-                        newIngredients[index].ingredientId = e.target.value;
+                        const newList = [...form.ingredients];
+                        newList[index].ingredientId = e.target.value;
+
                         setForm((prev) => ({
                           ...prev,
-                          ingredients: newIngredients,
+                          ingredients: newList,
                         }));
                       }}
-                      className="recipe-input small"
+                      className="fh-recipe-input fh-small"
                       required
                     >
                       <option value="">-- Select ingredient --</option>
@@ -346,31 +385,32 @@ export default function RecipeDashboard() {
                     </select>
 
                     <input
-                      type="text"
-                      placeholder="Quantity (e.g. 1kg)"
+                      type="number"
+                      placeholder="Quantity"
                       value={ing.quantity}
                       onChange={(e) => {
-                        const newIngredients = [...form.ingredients];
-                        newIngredients[index].quantity = e.target.value;
+                        const newList = [...form.ingredients];
+                        newList[index].quantity = e.target.value;
+
                         setForm((prev) => ({
                           ...prev,
-                          ingredients: newIngredients,
+                          ingredients: newList,
                         }));
                       }}
-                      className="recipe-input small"
+                      className="fh-recipe-input fh-small"
                       required
                     />
 
                     <button
                       type="button"
-                      className="remove-ingredient-btn"
+                      className="fh-remove-ingredient-btn"
                       onClick={() => {
-                        const newIngredients = form.ingredients.filter(
+                        const newList = form.ingredients.filter(
                           (_, i) => i !== index
                         );
                         setForm((prev) => ({
                           ...prev,
-                          ingredients: newIngredients,
+                          ingredients: newList,
                         }));
                       }}
                     >
@@ -379,16 +419,17 @@ export default function RecipeDashboard() {
                   </div>
                 ))}
               </div>
-              {/*   */}
-              <div className="recipe-modal-actions">
+
+              <div className="fh-modal-actions">
                 <button
                   type="button"
-                  className="recipe-btn ghost"
+                  className="fh-recipe-btn fh-ghost"
                   onClick={closeModal}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="recipe-btn primary">
+
+                <button type="submit" className="fh-recipe-btn fh-primary">
                   Save Recipe
                 </button>
               </div>
@@ -396,6 +437,7 @@ export default function RecipeDashboard() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

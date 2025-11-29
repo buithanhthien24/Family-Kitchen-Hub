@@ -167,6 +167,7 @@
   pointer-events: none;
   transition: opacity 0.25s ease;
   z-index: 1000;
+  
 }
 
 .modal-overlay.active {
@@ -185,6 +186,12 @@
   transform: scale(0.95) translateY(10px);
   opacity: 0;
   transition: all 0.25s ease;
+    /* Cho phép cuộn khi nội dung vượt quá chiều cao */
+    max-height: 80vh; /* Giới hạn chiều cao modal */
+    overflow-y: auto;
+
+    /* Ẩn thanh cuộn nhưng vẫn cuộn được */
+    scrollbar-width: none; /* Firefox */
 }
 
 .modal-overlay.active .modal {

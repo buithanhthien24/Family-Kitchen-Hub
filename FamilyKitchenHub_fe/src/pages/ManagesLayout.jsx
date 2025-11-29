@@ -1,15 +1,14 @@
 // ...existing code...
 import React from "react";
 import DashboardSidebar from "../layouts/dashboardSidebar";
-import TopNavbar from "../layouts/TopNavbar";
+
 import { Outlet } from "react-router-dom";
 import "../styles/ManagesLayout.css"; // Thêm dòng này
 
 const ManageLayouts = () => {
   return (
     <div className="manage-layout-root">
-      {/* Top navbar */}
-      <TopNavbar />
+   
 
       <div className="manage-layout-flex">
         {/* Sidebar */}

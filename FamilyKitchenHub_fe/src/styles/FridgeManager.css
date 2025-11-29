@@ -1,5 +1,4 @@
 .fridge-manager {
-  padding: 24px;
   background: #f9fafb;
   min-height: 100vh;
   font-family: "Segoe UI", sans-serif;
@@ -10,23 +9,36 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff7ed;
   padding: 20px 28px;
-  border-radius: 14px;
+  border-radius: 0 0 24px 24px;
   margin-bottom: 28px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .welcome-text h1 {
-  font-size: 22px;
+  font-size: 33px;
   font-weight: 700;
-  color: #111;
+  color: #fffdfd;
   margin-bottom: 4px;
+  
+  /* bắt đầu hiệu ứng */
+  opacity: 0;
+  transform: translateX(-40px);
+  animation: slideIn 0.8s ease forwards;
 }
-
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 .welcome-text p {
-  color: #6b7280;
-  font-size: 15px;
+  color: #ffffff;
+  font-size: 20px;
+    /* bắt đầu hiệu ứng */
+  opacity: 0;
+  transform: translateX(-40px);
+  animation: slideIn 0.8s ease forwards;
 }
 
 .fridge-icon {
@@ -36,11 +48,12 @@
 }
 
 /* Header */
-.header {
+.header-fridge {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding:24px ;
 }
 
 .btn {
@@ -66,6 +79,7 @@
 
 /* Ingredient cards */
 .ingredient-grid {
+  padding: 24px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
@@ -152,3 +166,4 @@
 .modal-overlay {
   position: fixed;
   inset:
+}

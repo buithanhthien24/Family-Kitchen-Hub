@@ -10,6 +10,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 import java.util.Set;
@@ -18,7 +19,7 @@ import java.util.Set;
  * Interface Mapper để chuyển đổi giữa DTO và Entity.
  * Yêu cầu thư viện MapStruct.
  */
-@Mapper(componentModel = "spring") // Cho Spring quản lý bean này
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE) // Cho Spring quản lý bean này
 public interface RecipeMapper {
 
     // Chuyển đổi DTO (Input) thành Entity để lưu vào DB
@@ -30,6 +31,7 @@ public interface RecipeMapper {
     @Mapping(target = "recipe", ignore = true)
     @Mapping(source = "ingredientId", target = "ingredient.id")
     @Mapping(source = "quantity", target = "quantity")
+    @Mapping(source = "unit", target = "unit")
     RecipeIngredient toRecipeIngredient(RecipeIngredientDTO dto);
 
     Set<RecipeIngredient> toRecipeIngredientSet(Set<RecipeIngredientDTO> dtos);

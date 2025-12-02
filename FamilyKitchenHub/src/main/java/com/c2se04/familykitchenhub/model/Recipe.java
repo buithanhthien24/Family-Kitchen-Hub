@@ -58,6 +58,7 @@ public class Recipe {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    
     // --- RELATIONSHIPS ---
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -65,14 +66,6 @@ public class Recipe {
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeStep> steps = new ArrayList<>();
-
-    @ManyToMany
-    @JoinTable(
-            name = "recipe_categories",
-            joinColumns = @JoinColumn(name = "recipe_id"),
-            inverseJoinColumns = @JoinColumn(name = "category_id")
-    )
-    private Set<Category> categories = new HashSet<>();
 
     // --- Constructors ---
 
@@ -197,13 +190,5 @@ public class Recipe {
 
     public void setSteps(List<RecipeStep> steps) {
         this.steps = steps;
-    }
-
-    public Set<Category> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(Set<Category> categories) {
-        this.categories = categories;
     }
 }

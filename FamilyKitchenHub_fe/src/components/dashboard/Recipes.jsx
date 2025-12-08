@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../hooks/axios";
 import "./../../styles/Recipes.css";
 import bgRecipes from "../../assets/recipebg.jpg";
-import RecipesBook from '../../assets/recipe-book.png';
+import RecipesBook from "../../assets/recipe-book.png";
+import bgFooter from "../../assets/bgfooter.png";
 import {
   Heart,
   HeartOff,
   Trash2,
   PlusCircle,
   X,
+  ChefHat,
+  Search,
 } from "lucide-react";
 
 export default function RecipeDashboard() {
@@ -25,15 +28,22 @@ export default function RecipeDashboard() {
     cookingTimeMinutes: "",
     servings: "",
     imageUrl: "",
-    ingredients: [], // ✔️ luôn tồn tại
+    ingredients: [],
   };
 
   const [recipes, setRecipes] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [preview, setPreview] = useState(null);
-
   const [allIngredients, setAllIngredients] = useState([]);
+  const [search, setSearch] = useState(""); // Recipe search
+  const [searchResults, setSearchResults] = useState([]); // Recipe search results
+  
+  // Ingredient search states for each ingredient row
+  const [ingredientSearches, setIngredientSearches] = useState({}); // { index: keyword }
+  const [ingredientDropdowns, setIngredientDropdowns] = useState({}); // { index: boolean }
+  const [ingredientSearching, setIngredientSearching] = useState({}); // { index: boolean }
+  const searchTimeoutsRef = useRef({}); // { index: timeoutId }
 
   // =========================
   //   LOAD INGREDIENTS (1 LẦN)
@@ -41,19 +51,70 @@ export default function RecipeDashboard() {
   useEffect(() => {
     const fetchIngredients = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("/ingredients", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setAllIngredients(res.data);
+        const res = await axios.get("/ingredients");
+        setAllIngredients(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("❌ Lỗi khi tải ingredients:", err);
       }
     };
 
-    if (allIngredients.length === 0) {
-      fetchIngredients(); // ✔️ chỉ gọi 1 lần
+    fetchIngredients();
+  }, []);
+
+  // =========================
+  //   SEARCH INGREDIENTS WITH DEBOUNCE
+  // =========================
+  const handleIngredientSearch = (index, keyword) => {
+    // Update search keyword
+    setIngredientSearches((prev) => ({ ...prev, [index]: keyword }));
+    setIngredientDropdowns((prev) => ({ ...prev, [index]: true }));
+
+    // Clear previous timeout
+    if (searchTimeoutsRef.current[index]) {
+      clearTimeout(searchTimeoutsRef.current[index]);
     }
+
+    // If empty, load all ingredients
+    if (!keyword.trim()) {
+      const loadAll = async () => {
+        try {
+          const res = await axios.get("/ingredients");
+          setAllIngredients(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+          console.error("Error loading ingredients:", err);
+        }
+      };
+      loadAll();
+      return;
+    }
+
+    // Set debounce timeout
+    searchTimeoutsRef.current[index] = setTimeout(async () => {
+      try {
+        setIngredientSearching((prev) => ({ ...prev, [index]: true }));
+        const res = await axios.get("/ingredients/search", {
+          params: { keyword: keyword.trim() },
+        });
+        setAllIngredients(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Error searching ingredients:", err);
+      } finally {
+        setIngredientSearching((prev) => ({ ...prev, [index]: false }));
+      }
+    }, 300);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.ingredient-search-container')) {
+        setIngredientDropdowns({});
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // =========================
@@ -66,20 +127,48 @@ export default function RecipeDashboard() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setRecipes(res.data);
+        setSearchResults(res.data); //  INIT SEARCH RESULTS
       } catch (err) {
-        console.error("❌ Lỗi khi tải recipes:", err);
+        console.error("Lỗi khi tải recipes:", err);
       }
     };
     fetchRecipes();
   }, [token]);
 
   // =========================
+  //   SEARCH RECIPES
+  // =========================
+  const handleSearch = async (e) => {
+    const query = e.target.value;
+    setSearch(query);
+
+    if (!query.trim()) {
+      setSearchResults(recipes);
+      return;
+    }
+
+    try {
+      const res = await axios.get(`/recipes/search`, {
+        params: { name: query },
+      });
+      setSearchResults(res.data || []);
+    } catch (err) {
+      console.error(" Lỗi khi tìm kiếm recipes:", err);
+      setSearchResults([]);
+    }
+  };
+
+  // =========================
   //   MODAL OPEN/CLOSE
   // =========================
   const openModal = () => {
-    setForm(defaultForm);   // ✔ RESET DÒNG 1
+    setForm(defaultForm);
     setPreview(null);
     setIsOpen(true);
+    // Reset ingredient search states
+    setIngredientSearches({});
+    setIngredientDropdowns({});
+    setIngredientSearching({});
   };
 
   const closeModal = () => setIsOpen(false);
@@ -130,8 +219,8 @@ export default function RecipeDashboard() {
       });
 
       setRecipes((prev) => [res.data, ...prev]);
+      setSearchResults((prev) => [res.data, ...prev]); // UPDATE SEARCH RESULTS
 
-      // RESET FORM
       setForm(defaultForm);
       setPreview(null);
       closeModal();
@@ -155,8 +244,9 @@ export default function RecipeDashboard() {
       });
 
       setRecipes((prev) => prev.filter((r) => r.id !== id));
+      setSearchResults((prev) => prev.filter((r) => r.id !== id)); // ✅ UPDATE SEARCH RESULTS
     } catch (err) {
-      console.error("❌ Lỗi khi xóa recipe:", err);
+      console.error(" Lỗi khi xóa recipe:", err);
     }
   };
 
@@ -166,34 +256,49 @@ export default function RecipeDashboard() {
 
   return (
     <div className="recipe-dashboard">
-
       {/* HEADER */}
       <header className="recipe-header">
-
-              {/* Welcome Section */}
-              <div className="welcome-section_recipe"
-              style={{
-                backgroundImage: `url(${bgRecipes})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                height: "110vh",
-              }}>
-                <div className="welcome-recipe-text">
-                  <h1>Make a recipe just for you</h1>
-                  <p>Keep your ingredients fresh and reduce food waste</p>
-                </div>
-              </div>
-        <button className="add-btn" onClick={openModal}>
-          <PlusCircle size={16} /> Add Recipe
-        </button>
+        {/* Welcome Section */}
+        <div
+          className="welcome-section_recipe"
+          style={{
+            backgroundImage: `url(${bgRecipes})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            height: "110vh",
+          }}
+        >
+          <div className="welcome-recipe-text">
+            <h1>Make a recipe just for you</h1>
+          </div>
+        </div>
       </header>
 
-      {/* GRID */}
+
+      {/* SEARCH SECTION */}
+      <div className="search-recipes">
+        <Search size={18} className="ai-search-icon" />
+        <input
+          type="text"
+          className="search-recipe-input"
+          placeholder="Search recipe..."
+          value={search}
+          onChange={handleSearch} //  CALL SEARCH API
+        />
+        <button className="add-btn-recipe" onClick={openModal}>
+          <PlusCircle size={16} /> Add Recipe
+        </button>
+      </div>
+      <div className="recipes-heading">
+        <h2 className="all-recipes">All Recipes</h2>
+      </div>
       <div className="recipe-grid">
-        {recipes.length === 0 ? (
-          <div className="empty">No recipes yet. Create one!</div>
+        {searchResults.length === 0 ? (
+          <div className="empty">
+            {search ? "No recipes found." : "No recipes yet. Create one!"}
+          </div>
         ) : (
-          recipes.map((r) => (
+          searchResults.map((r) => (
             <div
               key={r.id}
               className="recipe-card"
@@ -206,13 +311,14 @@ export default function RecipeDashboard() {
                   alt={r.title}
                 />
               </div>
-
+              <div className="line-middle">
+                <ChefHat size={16} />
+              </div>
               {/* CONTENT */}
               <div className="card-content-side">
                 <div className="card-header">
-                  <div>
+                  <div className="card-title">
                     <h3>{r.title}</h3>
-                    <p className="card-price">{r.servings} servings</p>
                   </div>
 
                   <div className="card-actions">
@@ -232,12 +338,12 @@ export default function RecipeDashboard() {
                     />
                   </div>
                 </div>
-
-                <p className="card-desc">{r.instructions}</p>
-
                 <div className="card-meta">
                   <span>⏱ {r.cookingTimeMinutes} min</span>
+                   {r.servings && <span>{r.servings} servings</span>}
+                  {r.mealType && <span>{r.mealType}</span>}
                 </div>
+                <p className="card-desc">{r.instructions}</p>
 
                 <button
                   className="btn-add"
@@ -259,21 +365,24 @@ export default function RecipeDashboard() {
       ============================== */}
       {isOpen && (
         <div className={`fh-modal-overlay ${isOpen ? "fh-active" : ""}`}>
-          <div className="fh-modal">
+          <div
+            className="fh-modal"
+            style={{
+              backgroundImage: `url(${bgFooter})`,
+              backgroundPosition: "bottom",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "100% auto",
+            }}
+          >
             <div className="fh-modal-header">
               <img className="fh-recipesBook" src={RecipesBook} alt="" />
               <h3 className="fh-modal-title">Add Recipe</h3>
-              {/* <button className="fh-icon-btn" onClick={closeModal}>
-                <X />
-              </button> */}
             </div>
-
             <form className="fh-modal-form" onSubmit={handleAdd}>
               <label className="fh-recipe-label">
-                
                 Title
                 <input
-                placeholder=""
+                  placeholder=""
                   type="text"
                   name="title"
                   value={form.title}
@@ -299,7 +408,7 @@ export default function RecipeDashboard() {
                 <label className="fh-recipe-label">
                   Time (minutes)
                   <input
-                  placeholder="30 minutes"
+                    placeholder="30 minutes"
                     type="number"
                     name="cookingTimeMinutes"
                     value={form.cookingTimeMinutes}
@@ -334,7 +443,11 @@ export default function RecipeDashboard() {
 
               {preview && (
                 <div className="fh-recipe-image-preview">
-                  <img src={preview} alt="Preview" className="fh-recipe-image" />
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="fh-recipe-image"
+                  />
                 </div>
               )}
 
@@ -351,7 +464,7 @@ export default function RecipeDashboard() {
                         ...prev,
                         ingredients: [
                           ...prev.ingredients,
-                          { ingredientId: "", quantity: "" },
+                          { ingredientId: "", quantity: "", unit: "" },
                         ],
                       }))
                     }
@@ -360,64 +473,162 @@ export default function RecipeDashboard() {
                   </button>
                 </div>
 
-                {form.ingredients.map((ing, index) => (
-                  <div key={index} className="fh-ingredient-row">
-                    <select
-                      value={ing.ingredientId}
-                      onChange={(e) => {
-                        const newList = [...form.ingredients];
-                        newList[index].ingredientId = e.target.value;
+                {form.ingredients.map((ing, index) => {
+                  const searchKeyword = ingredientSearches[index] || "";
+                  const showDropdown = ingredientDropdowns[index] || false;
+                  const isSearching = ingredientSearching[index] || false;
+                  const selectedIngredient = allIngredients.find(
+                    (opt) => opt.id === Number(ing.ingredientId)
+                  );
 
-                        setForm((prev) => ({
-                          ...prev,
-                          ingredients: newList,
-                        }));
-                      }}
-                      className="fh-recipe-input fh-small"
-                      required
-                    >
-                      <option value="">-- Select ingredient --</option>
-                      {allIngredients.map((opt) => (
-                        <option key={opt.id} value={opt.id}>
-                          {opt.name}
-                        </option>
-                      ))}
-                    </select>
+                  return (
+                    <div key={index} className="fh-ingredient-row">
+                      <div className="ingredient-search-container" style={{ position: "relative", flex: 1 }}>
+                        <input
+                          type="text"
+                          placeholder="Tìm kiếm nguyên liệu..."
+                          value={searchKeyword}
+                          onChange={(e) => handleIngredientSearch(index, e.target.value)}
+                          onFocus={() => {
+                            if (allIngredients.length > 0) {
+                              setIngredientDropdowns((prev) => ({ ...prev, [index]: true }));
+                            }
+                          }}
+                          className="fh-recipe-input fh-small"
+                          required
+                          style={{ width: "100%" }}
+                        />
+                        {isSearching && (
+                          <span style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#666" }}>
+                            Đang tìm...
+                          </span>
+                        )}
+                        {showDropdown && allIngredients.length > 0 && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "100%",
+                              left: 0,
+                              right: 0,
+                              backgroundColor: "white",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              maxHeight: "150px",
+                              overflowY: "auto",
+                              zIndex: 1000,
+                              marginTop: "4px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            {allIngredients.map((opt) => (
+                              <div
+                                key={opt.id}
+                                onClick={() => {
+                                  const newList = [...form.ingredients];
+                                  newList[index] = {
+                                    ingredientId: opt.id,
+                                    quantity: newList[index].quantity || "",
+                                    unit: opt.unit || "",
+                                  };
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    ingredients: newList,
+                                  }));
+                                  setIngredientSearches((prev) => ({
+                                    ...prev,
+                                    [index]: `${opt.name} (${opt.unit})`,
+                                  }));
+                                  setIngredientDropdowns((prev) => ({
+                                    ...prev,
+                                    [index]: false,
+                                  }));
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  cursor: "pointer",
+                                  borderBottom: "1px solid #eee",
+                                  fontSize: "13px",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = "#f5f5f5";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = "white";
+                                }}
+                              >
+                                {opt.name} ({opt.unit})
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                    <input
-                      type="number"
-                      placeholder="Quantity"
-                      value={ing.quantity}
-                      onChange={(e) => {
-                        const newList = [...form.ingredients];
-                        newList[index].quantity = e.target.value;
+                      {selectedIngredient && (
+                        <input
+                          type="text"
+                          placeholder="Unit"
+                          value={selectedIngredient.unit || ""}
+                          readOnly
+                          className="fh-recipe-input fh-small"
+                          style={{
+                            backgroundColor: "#f5f5f5",
+                            cursor: "not-allowed",
+                            color: "#666",
+                            width: "100px",
+                          }}
+                        />
+                      )}
 
-                        setForm((prev) => ({
-                          ...prev,
-                          ingredients: newList,
-                        }));
-                      }}
-                      className="fh-recipe-input fh-small"
-                      required
-                    />
+                      <input
+                        type="number"
+                        placeholder="Quantity"
+                        value={ing.quantity}
+                        onChange={(e) => {
+                          const newList = [...form.ingredients];
+                          newList[index].quantity = e.target.value;
+                          setForm((prev) => ({
+                            ...prev,
+                            ingredients: newList,
+                          }));
+                        }}
+                        className="fh-recipe-input fh-small"
+                        required
+                        style={{ width: "100px" }}
+                      />
 
-                    <button
-                      type="button"
-                      className="fh-remove-ingredient-btn"
-                      onClick={() => {
-                        const newList = form.ingredients.filter(
-                          (_, i) => i !== index
-                        );
-                        setForm((prev) => ({
-                          ...prev,
-                          ingredients: newList,
-                        }));
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        type="button"
+                        className="fh-remove-ingredient-btn"
+                        onClick={() => {
+                          const newList = form.ingredients.filter(
+                            (_, i) => i !== index
+                          );
+                          setForm((prev) => ({
+                            ...prev,
+                            ingredients: newList,
+                          }));
+                          // Clean up search states
+                          setIngredientSearches((prev) => {
+                            const next = { ...prev };
+                            delete next[index];
+                            return next;
+                          });
+                          setIngredientDropdowns((prev) => {
+                            const next = { ...prev };
+                            delete next[index];
+                            return next;
+                          });
+                          if (searchTimeoutsRef.current[index]) {
+                            clearTimeout(searchTimeoutsRef.current[index]);
+                            delete searchTimeoutsRef.current[index];
+                          }
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="fh-modal-actions">
@@ -437,7 +648,6 @@ export default function RecipeDashboard() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

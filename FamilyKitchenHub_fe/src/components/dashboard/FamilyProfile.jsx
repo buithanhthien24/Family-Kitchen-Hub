@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../hooks/axios";
+import EditProfile from "../EditProfile";
 import "./../../styles/FamilyProfile.css";
-import { Pen, Trash2, PlusCircle } from "lucide-react";
+import { Pen, Trash2, PlusCircle, Users, Heart, Activity, Target, UserCircle } from "lucide-react";
 
 export default function FamilyProfiles() {
   const [members, setMembers] = useState([]);
@@ -10,6 +11,7 @@ export default function FamilyProfiles() {
   const [form, setForm] = useState({
     name: "",
     age: "",
+    role: "",
     healthGoals: "",
     notes: "",
   });
@@ -52,6 +54,7 @@ export default function FamilyProfiles() {
       userId: user?.id,
       name: form.name,
       age: parseInt(form.age) || null,
+      role: form.role || null,
       healthGoals: form.healthGoals,
       notes: form.notes,
       allergies: [],
@@ -79,6 +82,7 @@ export default function FamilyProfiles() {
     const payload = {
       name: form.name,
       age: parseInt(form.age) || null,
+      role: form.role || null,
       healthGoals: form.healthGoals,
       notes: form.notes,
     };
@@ -121,12 +125,13 @@ export default function FamilyProfiles() {
       setForm({
         name: member.name,
         age: member.age || "",
+        role: member.role || "",
         healthGoals: member.healthGoals || "",
         notes: member.notes || "",
       });
     } else {
       setEditing(null);
-      setForm({ name: "", age: "", healthGoals: "", notes: "" });
+      setForm({ name: "", age: "", role: "", healthGoals: "", notes: "" });
     }
     setIsOpen(true);
   }
@@ -136,74 +141,135 @@ export default function FamilyProfiles() {
     setEditing(null);
   }
 
+  // Calculate stats
+  const totalMembers = members.length;
+  const avgAge = members.length > 0
+    ? Math.round(members.reduce((sum, m) => sum + (m.age || 0), 0) / members.length)
+    : 0;
+  const withGoals = members.filter(m => m.healthGoals).length;
+
   return (
     <div className="family-profiles-wrap">
-      <div className="profiles-header">
-        <div>
-          <h1>Family Members</h1>
-          <p className="muted">Manage your family members' info</p>
+
+
+      {/* Two Column Layout */}
+      <div className="family-profile-layout">
+        {/* LEFT: Edit Profile */}
+        <div className="left-section">
+          <EditProfile />
         </div>
-        <button className="btn primary" onClick={() => openModal()}>
-          <PlusCircle size={16} /> Add Member
-        </button>
-      </div>
 
-      <div className="cards-grid">
-        {members.length === 0 ? (
-          <div className="empty">No family members yet.</div>
-        ) : (
-          members.map((m) => (
-            <div key={m.id} className="profile-card">
-              <div className="card-top">
-                <div className="avatar">
-                  {m.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </div>
-                <div className="meta">
-                  <h3>{m.name}</h3>
-                  <p className="sub">
-                    {m.age ? `${m.age} tuổi` : "—"} • {m.userName}
-                  </p>
-                </div>
-                <div className="actions">
-                  <button
-                    onClick={() => openModal(m)}
-                    className="icon-btn edit"
-                  >
-                    <Pen size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(m.id)}
-                    className="icon-btn delete"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="card-body">
-                <p>
-                  <strong>Mục tiêu sức khỏe:</strong>{" "}
-                  {m.healthGoals || "Không có"}
-                </p>
-                <p>
-                  <strong>Ghi chú:</strong> {m.notes || "Không có"}
-                </p>
-              </div>
+        {/* RIGHT: Family Members */}
+        <div className="right-section">
+          <div className="members-header">
+            <div className="header-content">
+              <h2>
+                <Users size={24} className="header-icon" />
+                Family Members
+              </h2>
+              <p className="muted">Quản lý thông tin gia đình</p>
             </div>
-          ))
-        )}
+            <button className="btn primary" onClick={() => openModal()}>
+              <PlusCircle size={16} /> Add Member
+            </button>
+          </div>
+
+          <div className="members-list">
+            {members.length === 0 ? (
+              <div className="empty-state">
+                <Users size={48} />
+                <h3>Chưa có thành viên nào</h3>
+                <p>Thêm thành viên gia đình để bắt đầu</p>
+                <button className="btn primary" onClick={() => openModal()}>
+                  <PlusCircle size={16} /> Thêm thành viên đầu tiên
+                </button>
+              </div>
+            ) : (
+              members.map((m) => (
+                <div key={m.id} className="member-card">
+                  <div className="card-top">
+                    <div className="avatar">
+                      {m.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()}
+                    </div>
+                    <div className="meta">
+                      <h4>{m.name}</h4>
+                      <p className="sub">
+                        {m.role && (
+                          <span className="role-badge">
+                            <UserCircle size={12} />
+                            {m.role}
+                          </span>
+                        )}
+                        {m.age && (
+                          <span className="age-badge">
+                            {m.age} tuổi
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="actions">
+                      <button
+                        onClick={() => openModal(m)}
+                        className="icon-btn edit"
+                        title="Edit"
+                      >
+                        <Pen size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(m.id)}
+                        className="icon-btn delete"
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="card-body">
+                    {m.healthGoals && (
+                      <div className="info-row">
+                        <div className="info-icon">
+                          <Target size={14} />
+                        </div>
+                        <div className="info-text">
+                          <strong>Mục tiêu:</strong> {m.healthGoals}
+                        </div>
+                      </div>
+                    )}
+                    {m.notes && (
+                      <div className="info-row">
+                        <div className="info-icon">
+                          <Heart size={14} />
+                        </div>
+                        <div className="info-text">
+                          <strong>Ghi chú:</strong> {m.notes}
+                        </div>
+                      </div>
+                    )}
+                    {!m.healthGoals && !m.notes && (
+                      <p className="no-info">Chưa có thông tin bổ sung</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Modal for Add/Edit Member */}
       {isOpen && (
         <div className={`modal-overlay ${isOpen ? "active" : ""}`}>
           <div className="modal">
             <div className="modal-header">
-              <h3>{editing ? "Edit Member" : "Add Member"}</h3>
-              <button className="icon-btn" onClick={closeModal}>
+              <h3>
+                {editing ? "✏️ Chỉnh sửa thành viên" : "➕ Thêm thành viên mới"}
+              </h3>
+              <button className="icon-btn close-btn" onClick={closeModal}>
                 ✕
               </button>
             </div>
@@ -213,47 +279,64 @@ export default function FamilyProfiles() {
               onSubmit={editing ? handleEditSubmit : handleAdd}
             >
               <label>
-                Name
+                Tên thành viên
                 <input
                   type="text"
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  placeholder="e.g. Huy Vo"
+                  placeholder="Ví dụ: Nguyễn Văn A"
                   required
                 />
               </label>
 
               <div className="form-grid">
                 <label>
-                  Age
+                  Tuổi
                   <input
                     type="number"
                     name="age"
                     value={form.age}
                     onChange={handleChange}
-                    placeholder="e.g. 25"
+                    placeholder="25"
                   />
                 </label>
                 <label>
-                  Health Goals
-                  <input
-                    type="text"
-                    name="healthGoals"
-                    value={form.healthGoals}
+                  Vai trò
+                  <select
+                    name="role"
+                    value={form.role}
                     onChange={handleChange}
-                    placeholder="e.g. Lose weight"
-                  />
+                  >
+                    <option value="">-- Chọn vai trò --</option>
+                    <option value="Dad">👨 Bố</option>
+                    <option value="Mom">👩 Mẹ</option>
+                    <option value="Son">👦 Con trai</option>
+                    <option value="Daughter">👧 Con gái</option>
+                    <option value="Grandparent">👴 Ông/Bà</option>
+                    <option value="Other">👤 Khác</option>
+                  </select>
                 </label>
               </div>
 
               <label>
-                Notes
+                Mục tiêu sức khỏe
+                <input
+                  type="text"
+                  name="healthGoals"
+                  value={form.healthGoals}
+                  onChange={handleChange}
+                  placeholder="Giảm cân, tăng cơ..."
+                />
+              </label>
+
+              <label>
+                Ghi chú (Dị ứng, sở thích...)
                 <textarea
                   name="notes"
                   value={form.notes}
                   onChange={handleChange}
-                  placeholder="e.g. Allergic to dairy"
+                  placeholder="Ví dụ: Dị ứng hải sản, thích ăn chay..."
                 />
               </label>
 
@@ -263,10 +346,10 @@ export default function FamilyProfiles() {
                   className="btn ghost"
                   onClick={closeModal}
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button type="submit" className="btn primary">
-                  {editing ? "Update Member" : "Save Member"}
+                  {editing ? "Cập nhật" : "Thêm mới"}
                 </button>
               </div>
             </form>

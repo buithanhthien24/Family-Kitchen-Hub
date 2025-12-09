@@ -28,6 +28,7 @@ export default function RecipeDashboard() {
     instructions: "",
     cookingTimeMinutes: "",
     servings: "",
+    mealType: "",
     imageUrl: "",
     ingredients: [],
   };
@@ -52,7 +53,7 @@ export default function RecipeDashboard() {
         });
         setAllIngredients(res.data);
       } catch (err) {
-        console.error("❌ Lỗi khi tải ingredients:", err);
+        console.error(" Lỗi khi tải ingredients:", err);
       }
     };
 
@@ -148,6 +149,7 @@ export default function RecipeDashboard() {
           ? Number(form.cookingTimeMinutes)
           : undefined,
         servings: form.servings ? Number(form.servings) : undefined,
+        mealType: form.mealType || null,
         imageUrl: form.imageUrl || null,
         ingredients: form.ingredients.map((i) => ({
           ingredientId: Number(i.ingredientId),
@@ -285,7 +287,7 @@ export default function RecipeDashboard() {
                 </div>
                 <div className="card-meta">
                   <span>⏱ {r.cookingTimeMinutes} min</span>
-                   {r.servings && <span>{r.servings} servings</span>}
+                  {r.servings && <span>{r.servings} servings</span>}
                   {r.mealType && <span>{r.mealType}</span>}
                 </div>
                 <p className="card-desc">{r.instructions}</p>
@@ -373,6 +375,21 @@ export default function RecipeDashboard() {
                   />
                 </label>
               </div>
+
+              <label className="fh-recipe-label">
+                Meal Type
+                <select
+                  name="mealType"
+                  value={form.mealType}
+                  onChange={handleChange}
+                  className="fh-recipe-input"
+                >
+                  <option value="">-- Select Meal Type --</option>
+                  <option value="BREAKFAST">Breakfast</option>
+                  <option value="LUNCH">Lunch</option>
+                  <option value="DINNER">Dinner</option>
+                </select>
+              </label>
 
               <label className="fh-recipe-label">
                 Image URL

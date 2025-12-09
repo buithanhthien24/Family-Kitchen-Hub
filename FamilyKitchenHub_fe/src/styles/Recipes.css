@@ -74,6 +74,7 @@
   background-position: center;
   background-attachment: fixed;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 /* Dark Overlay với Gradient */
@@ -566,7 +567,7 @@
 }
 
 /* ===============================
-   🧾 RECIPE CARD — VERTICAL
+    RECIPE CARD — VERTICAL
 =================================*/
 .recipe-card {
   display: flex;
@@ -614,7 +615,13 @@
 .recipe-card:hover img {
   transform: scale(1.05);
 }
-
+.line-middle {
+  text-align: center;
+  padding: auto;
+ 
+  color: #ff8a37;
+  background: #fff4ee;
+}
 /* Badge */
 .card-badge {
   position: absolute;

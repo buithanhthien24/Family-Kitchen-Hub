@@ -10,5 +10,7 @@ import java.util.Optional;
 @Repository
 public interface RecipePopularityRepository extends JpaRepository<RecipePopularity, Long> {
     Optional<RecipePopularity> findByRecipe(Recipe recipe);
-}
 
+    // Cascade deletion method for recipe deletion
+    void deleteByRecipeId(Long recipeId);
+}

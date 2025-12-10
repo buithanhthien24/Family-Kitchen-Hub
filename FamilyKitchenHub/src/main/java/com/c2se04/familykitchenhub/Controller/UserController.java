@@ -40,6 +40,7 @@ public class UserController {
         user.setEmail(userDTO.getEmail());
         user.setPassword(userDTO.getPassword());
         user.setFullName(userDTO.getFullName());
+        user.setCountry(userDTO.getCountry());
 
         // Lưu ý: UserService cần xử lý việc tạo 1 FamilyMember mặc định (Chủ hộ)
         User newUser = userService.createUser(user);
@@ -69,6 +70,7 @@ public class UserController {
         User updateDetails = new User();
         updateDetails.setFullName(userDTO.getFullName());
         updateDetails.setEmail(userDTO.getEmail());
+        updateDetails.setCountry(userDTO.getCountry());
 
         // Không cho phép update username/password tại endpoint này
         User updatedUser = userService.updateUser(id, updateDetails);

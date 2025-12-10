@@ -56,9 +56,12 @@ public class UserService {
         if (updatedDetails.getEmail() != null) {
             existingUser.setEmail(updatedDetails.getEmail());
         }
+        if (updatedDetails.getCountry() != null) {
+            existingUser.setCountry(updatedDetails.getCountry());
+        }
         return userRepository.save(existingUser);
     }
-    
+
     // DELETE
     @Transactional
     public void deleteUser(Long id) {

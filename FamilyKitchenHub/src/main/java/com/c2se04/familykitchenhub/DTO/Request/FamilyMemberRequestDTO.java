@@ -9,10 +9,10 @@ public class FamilyMemberRequestDTO {
     private Long userId;
     private String name;
     private Integer age;
-    private Gender gender; // MALE, FEMALE, OTHER
+    private Gender gender;
     private Float heightCm;
     private Float weightKg;
-    private ActivityLevel activityLevel; // SEDENTARY, ACTIVE...
+    private ActivityLevel activityLevel;
     private Boolean isAccountOwner;
 
     private String tastePreferences;
@@ -20,12 +20,10 @@ public class FamilyMemberRequestDTO {
 
     private Set<Long> allergyIds;
 
-    // --- Constructors ---
     public FamilyMemberRequestDTO() {
     }
 
-    // --- Getters and Setters ---
-
+    // ---------- GETTERS / SETTERS ----------
     public Long getUserId() {
         return userId;
     }
@@ -86,8 +84,8 @@ public class FamilyMemberRequestDTO {
         return isAccountOwner;
     }
 
-    public void setIsAccountOwner(Boolean accountOwner) {
-        isAccountOwner = accountOwner;
+    public void setIsAccountOwner(Boolean isAccountOwner) {
+        this.isAccountOwner = isAccountOwner;
     }
 
     public String getTastePreferences() {

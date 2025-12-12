@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
     Box,
@@ -411,4 +412,3 @@ const EditProfile = () => {
 };
 
 export default EditProfile;
-

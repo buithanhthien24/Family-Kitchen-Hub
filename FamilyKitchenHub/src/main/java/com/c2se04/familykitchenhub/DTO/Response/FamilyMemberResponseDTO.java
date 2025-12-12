@@ -11,7 +11,6 @@ public class FamilyMemberResponseDTO {
     private String userName;
     private String name;
     private Integer age;
-
     private Gender gender;
     private Float heightCm;
     private Float weightKg;
@@ -26,7 +25,7 @@ public class FamilyMemberResponseDTO {
     public FamilyMemberResponseDTO() {
     }
 
-    // --- Getters and Setters ---
+    // ---------- GETTERS / SETTERS ----------
 
     public Long getId() {
         return id;
@@ -104,8 +103,8 @@ public class FamilyMemberResponseDTO {
         return isAccountOwner;
     }
 
-    public void setIsAccountOwner(Boolean accountOwner) {
-        isAccountOwner = accountOwner;
+    public void setIsAccountOwner(Boolean isAccountOwner) {
+        this.isAccountOwner = isAccountOwner;
     }
 
     public String getTastePreferences() {

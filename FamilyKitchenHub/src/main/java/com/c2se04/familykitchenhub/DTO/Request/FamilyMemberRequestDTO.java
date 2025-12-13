@@ -1,10 +1,11 @@
 package com.c2se04.familykitchenhub.DTO.Request;
 
-import com.c2se04.familykitchenhub.enums.Gender;
 import com.c2se04.familykitchenhub.enums.ActivityLevel;
+import com.c2se04.familykitchenhub.enums.Gender;
 import java.util.Set;
 
 public class FamilyMemberRequestDTO {
+
     private Long userId;
     private String name;
     private Integer age;
@@ -13,13 +14,16 @@ public class FamilyMemberRequestDTO {
     private Float weightKg;
     private ActivityLevel activityLevel;
     private Boolean isAccountOwner;
+
     private String tastePreferences;
     private String healthConditions;
+
     private Set<Long> allergyIds;
 
     public FamilyMemberRequestDTO() {
     }
 
+    // ---------- GETTERS / SETTERS ----------
     public Long getUserId() {
         return userId;
     }
@@ -80,8 +84,8 @@ public class FamilyMemberRequestDTO {
         return isAccountOwner;
     }
 
-    public void setIsAccountOwner(Boolean accountOwner) {
-        isAccountOwner = accountOwner;
+    public void setIsAccountOwner(Boolean isAccountOwner) {
+        this.isAccountOwner = isAccountOwner;
     }
 
     public String getTastePreferences() {

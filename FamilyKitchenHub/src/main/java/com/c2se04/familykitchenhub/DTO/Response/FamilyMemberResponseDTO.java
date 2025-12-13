@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 public class FamilyMemberResponseDTO {
+
     private Long id;
     private Long userId;
     private String userName;
@@ -23,6 +24,8 @@ public class FamilyMemberResponseDTO {
 
     public FamilyMemberResponseDTO() {
     }
+
+    // ---------- GETTERS / SETTERS ----------
 
     public Long getId() {
         return id;
@@ -100,8 +103,8 @@ public class FamilyMemberResponseDTO {
         return isAccountOwner;
     }
 
-    public void setIsAccountOwner(Boolean accountOwner) {
-        isAccountOwner = accountOwner;
+    public void setIsAccountOwner(Boolean isAccountOwner) {
+        this.isAccountOwner = isAccountOwner;
     }
 
     public String getTastePreferences() {

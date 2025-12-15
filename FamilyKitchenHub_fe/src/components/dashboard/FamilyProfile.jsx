@@ -37,12 +37,26 @@ export default function FamilyProfiles() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      console.warn("Chưa có token, vui lòng đăng nhập!");
+      toast.warn("Bạn chưa đăng nhập! Vui lòng đăng nhập để xem hồ sơ gia đình.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
       return;
     }
 
+    // Get userId from localStorage
+    const userDataString = localStorage.getItem("user");
+    const userData = userDataString ? JSON.parse(userDataString) : null;
+    const userId = userData?.user?.id || userData?.id || localStorage.getItem("userId");
+
+    if (!userId) {
+      console.error("No userId found in localStorage");
+      return;
+    }
+
+    // Use the correct endpoint: /family-members/user/{userId}
     axios
-      .get("/family-members", {
+      .get(`/family-members/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -396,7 +410,7 @@ export default function FamilyProfiles() {
 
                     {m.allergies && m.allergies.length > 0 && (
                       <div className="section">
-                        <div className="section-title">Dị ứng:</div>
+                        <div className="section-title">Nguyên liệu dị ứng:</div>
                         <div className="chips">
                           {m.allergies.map((algo) => (
                             <span key={algo.id} className="chip danger">
@@ -545,15 +559,15 @@ export default function FamilyProfiles() {
                 </label>
 
                 <div className="form-group" style={{ marginBottom: 16 }}>
-                  <label>Dị ứng</label>
+                  <label>Nguyên liệu dị ứng</label>
                   <div className="custom-combobox">
                     <div
                       className="combobox-trigger"
                       onClick={() => setShowAllergies(!showAllergies)}
                     >
                       {form.allergyIds && form.allergyIds.length > 0
-                        ? `Đã chọn ${form.allergyIds.length} dị ứng`
-                        : "-- Chọn dị ứng --"}
+                        ? `Đã chọn ${form.allergyIds.length} nguyên liệu dị ứng`
+                        : "-- Chọn nguyên liệu dị ứng --"}
                       <ChevronDown size={16} />
                     </div>
                     {showAllergies && (

@@ -54,6 +54,12 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/auth/users/**").authenticated()
                                                 // Public user info: get username by id
                                                 .requestMatchers("/api/users/*/username").permitAll()
+                                                // Make recipe listing and top bookmarked recipes public (for home page)
+                                                .requestMatchers(
+                                                                "/api/dashboard/popular-recipes", // GET popular recipes
+                                                                                                  // with scores
+                                                                "/api/recipes/top-bookmarked" // GET top bookmarked
+                                                ).permitAll()
                                                 // Make recipe comment APIs public
                                                 .requestMatchers(
                                                                 "/api/recipes/*/comments", // POST/GET comments for a

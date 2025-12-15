@@ -29,6 +29,7 @@ import RecipesPage from "./pages/admin/RecipesPage";
 import CategoriesPage from "./pages/admin/CategoriesPage";
 import AllergiesPage from "./pages/admin/AllergiesPage";
 import UsersPage from "./pages/admin/UsersPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 function App() {
   return (
     <BrowserRouter>
@@ -58,8 +59,8 @@ function App() {
           <Route path="users" element={<UsersPage />} />
         </Route>
 
-        {/* Dùng ManageLayouts cho các trang quản lý */}
-        <Route path="/manage/*" element={<ManageLayouts />}>
+        {/* Dùng ManageLayouts cho các trang quản lý - PROTECTED */}
+        <Route path="/manage/*" element={<ProtectedRoute><ManageLayouts /></ProtectedRoute>}>
           {/* Các trang con quản lý */}
           <Route path="Dashboard" element={<IngredientListScreen />} />
           <Route path="fridge" element={<Fridge />} />

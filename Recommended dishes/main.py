@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # --- CẤU HÌNH TRỌNG SỐ (WEIGHTS) ---
 SCORE_ALLERGY_VIOLATION = -9999  # Loại ngay lập tức nếu dị ứng
@@ -113,8 +115,8 @@ def recommend_recipes():
                     'score': score
                 })
 
-        # Sắp xếp giảm dần theo điểm
-        sorted_recommendations = sorted(scored_recipes, key=lambda r: r['score'], reverse=True)
+        # Sắp xếp giảm dần theo điểm và lấy top 8
+        sorted_recommendations = sorted(scored_recipes, key=lambda r: r['score'], reverse=True)[:8]
 
         return jsonify({
             'status': 'success',

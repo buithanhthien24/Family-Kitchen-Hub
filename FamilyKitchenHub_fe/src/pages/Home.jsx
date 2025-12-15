@@ -29,22 +29,36 @@ function Home() {
   const [slidesPerView, setSlidesPerView] = useState(3);
   const navigate = useNavigate();
 
-  // 5.2 – Xem danh sách tất cả công thức: GET /api/recipes
+  // 5.2 – Xem danh sách tất cả công thức: GET /api/dashboard/popular-recipes
   useEffect(() => {
     const fetchRecipes = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("/recipes");
-        const recipesData = res.data || [];
-        // Filter out recipes without valid IDs and log for debugging
-        const validRecipes = recipesData.filter(recipe => {
-          const id = recipe.id || recipe.recipeId;
-          if (!id) {
-            console.warn("Recipe without ID:", recipe);
-            return false;
-          }
-          return true;
+        const res = await axios.get("/dashboard/popular-recipes", {
+          params: { limit: 10 } // Get top 10 popular recipes
         });
+        const recipesData = res.data || [];
+
+        // Map RecipePopularityResponseDTO fields to match expected format
+        const validRecipes = recipesData
+          .map(recipe => ({
+            id: recipe.recipeId,           // Map recipeId -> id
+            title: recipe.recipeTitle,      // Map recipeTitle -> title
+            imageUrl: recipe.imageUrl,
+            bookmarkCount: recipe.bookmarkCount,
+            popularityScore: recipe.popularityScore,
+            searchCount: recipe.searchCount,
+            cookingTimeMinutes: recipe.cookingTimeMinutes || 30, // Default if not provided
+            servings: recipe.servings || 4  // Default if not provided
+          }))
+          .filter(recipe => {
+            if (!recipe.id) {
+              console.warn("Recipe without ID:", recipe);
+              return false;
+            }
+            return true;
+          });
+
         setRecipes(validRecipes);
       } catch (error) {
         console.error("Error fetching recipes:", error);
@@ -62,7 +76,7 @@ function Home() {
     try {
       const data = await getTopBookmarkedRecipes(5);
       const bookmarkedData = data || [];
-      
+
       // Filter out recipes without valid IDs
       const validBookmarked = bookmarkedData.filter(recipe => {
         const id = recipe.id || recipe.recipeId;
@@ -72,7 +86,7 @@ function Home() {
         }
         return true;
       });
-      
+
       // Fetch full recipe details for each bookmarked recipe
       const recipesWithDetails = await Promise.all(
         validBookmarked.map(async (recipe) => {
@@ -82,7 +96,7 @@ function Home() {
             if (recipe.title && recipe.imageUrl && recipe.cookingTimeMinutes !== undefined) {
               return recipe;
             }
-            
+
             // Otherwise, fetch full details
             const fullRecipe = await getRecipeById(recipeId);
             return {
@@ -97,12 +111,12 @@ function Home() {
           }
         })
       );
-      
+
       // Debug: Log first recipe to check structure
       if (recipesWithDetails.length > 0) {
         console.log("Sample bookmarked recipe structure:", recipesWithDetails[0]);
       }
-      
+
       setTopBookmarked(recipesWithDetails);
     } catch (error) {
       console.error("Error fetching top bookmarked recipes:", error);
@@ -126,7 +140,7 @@ function Home() {
     const updateSlidesPerView = () => {
       const newSlidesPerView = calculateSlidesPerView();
       setSlidesPerView(newSlidesPerView);
-      
+
       // Adjust current slide if needed
       const maxSlide = Math.max(0, topBookmarked.length - newSlidesPerView);
       if (currentSlide > maxSlide) {
@@ -142,11 +156,11 @@ function Home() {
   // Handle bookmark toggle
   const handleBookmark = async (e, recipeId) => {
     e.stopPropagation(); // Prevent card click navigation
-    
+
     const userDataString = localStorage.getItem("user");
     const userData = userDataString ? JSON.parse(userDataString) : null;
     const userId = userData?.user?.id || userData?.id || localStorage.getItem("userId");
-    
+
     if (!userId) {
       alert("Vui lòng đăng nhập để bookmark công thức");
       return;
@@ -167,14 +181,14 @@ function Home() {
         await addRecipeBookmark(recipeId, { userId: Number(userId) });
         setBookmarkedRecipes(prev => new Set(prev).add(recipeId));
       }
-      
+
       // Reload top bookmarked list
       await fetchTopBookmarked();
-      
+
       // Update bookmark count in recipes list
-      setRecipes(prevRecipes => 
-        prevRecipes.map(recipe => 
-          recipe.id === recipeId 
+      setRecipes(prevRecipes =>
+        prevRecipes.map(recipe =>
+          recipe.id === recipeId
             ? { ...recipe, bookmarkCount: (recipe.bookmarkCount || 0) + (isBookmarked ? -1 : 1) }
             : recipe
         )
@@ -209,7 +223,7 @@ function Home() {
             </p>
 
             <div className="hero-buttons">
-              <button 
+              <button
                 className="btn-primary"
                 onClick={() => navigate("/manage/recommendations")}
                 style={{
@@ -256,12 +270,12 @@ function Home() {
                 >
                   <ChevronLeft size={24} />
                 </button>
-                
+
                 <div className="slider-track" style={{ transform: `translateX(-${currentSlide * (100 / slidesPerView)}%)` }}>
                   {topBookmarked.map((recipe, index) => {
                     const recipeId = recipe.id || recipe.recipeId;
                     if (!recipeId) return null;
-                    
+
                     return (
                       <div
                         key={recipeId || `bookmarked-${index}`}
@@ -279,16 +293,18 @@ function Home() {
                             <div className="bookmark-badge">
                               ⭐ {recipe.bookmarkCount || 0} bookmarks
                             </div>
-                            <button 
+                            <button
                               className={`bookmark-btn ${bookmarkedRecipes.has(recipeId) ? 'bookmarked' : ''}`}
                               onClick={(e) => handleBookmark(e, recipeId)}
                               disabled={bookmarking[recipeId]}
                               aria-label={bookmarkedRecipes.has(recipeId) ? "Remove bookmark" : "Add bookmark"}
+                              title={bookmarkedRecipes.has(recipeId) ? "Remove from favorites" : "Add to favorites"}
                             >
-                              <Heart 
-                                size={20} 
+                              <Heart
+                                size={22}
                                 fill={bookmarkedRecipes.has(recipeId) ? "#ea580c" : "none"}
-                                color={bookmarkedRecipes.has(recipeId) ? "#ea580c" : "#fff"}
+                                color="#ea580c"
+                                strokeWidth={2.5}
                               />
                             </button>
                           </div>
@@ -308,7 +324,7 @@ function Home() {
                     );
                   })}
                 </div>
-                
+
                 <button
                   className="slider-btn slider-btn-next"
                   onClick={() => {
@@ -321,7 +337,7 @@ function Home() {
                   <ChevronRight size={24} />
                 </button>
               </div>
-              
+
               <div className="slider-dots">
                 {Array.from({ length: Math.ceil(topBookmarked.length / slidesPerView) }).map((_, index) => (
                   <button
@@ -355,43 +371,45 @@ function Home() {
             {recipes.map((recipe, index) => {
               const recipeId = recipe.id || recipe.recipeId;
               if (!recipeId) return null;
-              
+
               return (
-              <div
-                key={recipeId || `recipe-${index}`}
-                className="suggestion-card"
-                onClick={() => recipeId && navigate(`/manage/recipesdetails/${recipeId}`)}
-              >
-                <div className="suggestion-image">
-                  <img
-                    src={recipe.imageUrl || "/placeholder-recipe.jpg"}
-                    alt={recipe.title}
-                  />
-                  <button 
-                    className={`heart-btn ${bookmarkedRecipes.has(recipeId) ? 'bookmarked' : ''}`}
-                    onClick={(e) => handleBookmark(e, recipeId)}
-                    disabled={bookmarking[recipeId]}
-                    aria-label={bookmarkedRecipes.has(recipeId) ? "Remove bookmark" : "Add bookmark"}
-                  >
-                    <Heart 
-                      size={20} 
-                      fill={bookmarkedRecipes.has(recipeId) ? "#ff6b6b" : "none"}
-                      color={bookmarkedRecipes.has(recipeId) ? "#ff6b6b" : "#fff"}
+                <div
+                  key={recipeId || `recipe-${index}`}
+                  className="suggestion-card"
+                  onClick={() => recipeId && navigate(`/manage/recipesdetails/${recipeId}`)}
+                >
+                  <div className="suggestion-image">
+                    <img
+                      src={recipe.imageUrl || "/placeholder-recipe.jpg"}
+                      alt={recipe.title}
                     />
-                  </button>
-                </div>
-                <div className="suggestion-content">
-                  <h3>{recipe.title}</h3>
-                  <div className="suggestion-meta">
-                    <span className="time">
-                      ⏱ {recipe.cookingTimeMinutes || "--"} min
-                    </span>
-                    <span className="area">
-                      🍽 {recipe.servings ? `${recipe.servings} servings` : ""}
-                    </span>
+                    <button
+                      className={`heart-btn ${bookmarkedRecipes.has(recipeId) ? 'bookmarked' : ''}`}
+                      onClick={(e) => handleBookmark(e, recipeId)}
+                      disabled={bookmarking[recipeId]}
+                      aria-label={bookmarkedRecipes.has(recipeId) ? "Remove bookmark" : "Add bookmark"}
+                      title={bookmarkedRecipes.has(recipeId) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart
+                        size={22}
+                        fill={bookmarkedRecipes.has(recipeId) ? "#ff6b6b" : "none"}
+                        color={bookmarkedRecipes.has(recipeId) ? "#ff6b6b" : "#2d3748"}
+                        strokeWidth={2.5}
+                      />
+                    </button>
+                  </div>
+                  <div className="suggestion-content">
+                    <h3>{recipe.title}</h3>
+                    <div className="suggestion-meta">
+                      <span className="time">
+                        ⏱ {recipe.cookingTimeMinutes || "--"} min
+                      </span>
+                      <span className="area">
+                        🍽 {recipe.servings ? `${recipe.servings} servings` : ""}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
               );
             })}
           </div>

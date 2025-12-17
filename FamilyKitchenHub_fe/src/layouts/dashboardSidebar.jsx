@@ -9,8 +9,12 @@ import {
   User,
   HomeIcon,
   ChevronDown,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Bell,
+  AlertCircle
 } from "lucide-react";
+import axios from "../hooks/axios";
+import dayjs from "dayjs";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { isValidJWT } from "../utils/security";
 
@@ -41,6 +45,11 @@ export default function Sidebar() {
   const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+
+  // Notification State
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [expiringItems, setExpiringItems] = useState([]);
+  const notificationRef = useRef(null);
 
   // Update indicator
   useEffect(() => {
@@ -102,10 +111,49 @@ export default function Sidebar() {
       if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
         setOpenDropdownIndex(null);
       }
+
+      // Close notifications when clicking outside
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch expiring ingredients
+  useEffect(() => {
+    const fetchExpiringIngredients = async () => {
+      if (!isLoggedIn || !user) return;
+
+      try {
+        const res = await axios.get(`/inventory/user/${user.id}`);
+        const ingredients = res.data || [];
+
+        // Filter items expiring in <= 3 days
+        const today = dayjs();
+        const expiring = ingredients.filter(item => {
+          if (!item.expirationDate) return false;
+          const expDate = dayjs(item.expirationDate);
+          const diffDays = expDate.diff(today, 'day');
+          return diffDays <= 3 && diffDays >= -1; // Include expired items too (up to -1 day for robustness)
+        });
+
+        // Sort by expiration date (soonest first)
+        expiring.sort((a, b) => dayjs(a.expirationDate).diff(dayjs(b.expirationDate)));
+
+        setExpiringItems(expiring);
+      } catch (error) {
+        console.error("Error fetching expiring ingredients:", error);
+      }
+    };
+
+    fetchExpiringIngredients();
+
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchExpiringIngredients, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn, user]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -120,6 +168,8 @@ export default function Sidebar() {
       <div className="sidebar-tab-switcher">
         {/* Indicator */}
         <div className="tab-indicator" ref={indicatorRef}></div>
+
+
 
         {TABS.map((tab, i) => {
           if (tab.dropdown) {
@@ -188,6 +238,58 @@ export default function Sidebar() {
             </Link>
           );
         })}
+                {/* NOTIFICATION BELL */}
+        {isLoggedIn && (
+          <div className="notification-wrapper" ref={notificationRef}>
+            <button
+              className="notification-btn"
+              onClick={() => setShowNotifications(!showNotifications)}
+              title="Notifications"
+            >
+              <Bell size={20} />
+              {expiringItems.length > 0 && (
+                <div className="notification-badge">{expiringItems.length}</div>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="notification-dropdown">
+                <div className="notification-header">
+                  <span>Sắp hết hạn ({expiringItems.length})</span>
+                </div>
+                <div className="notification-list">
+                  {expiringItems.length > 0 ? (
+                    expiringItems.map((item, index) => {
+                      const expDate = dayjs(item.expirationDate);
+                      const diffDays = expDate.diff(dayjs(), 'day');
+                      const isExpired = diffDays < 0;
+
+                      return (
+                        <div key={index} className="notification-item">
+                          <AlertCircle size={22} className="notif-icon" />
+                          <div className="notif-content">
+                            <div className="notif-title">{item.ingredientName}</div>
+                            <div className="notif-time">
+                              {isExpired
+                                ? "Đã hết hạn!"
+                                : diffDays === 0
+                                  ? "Hết hạn hôm nay"
+                                  : `Hết hạn sau ${diffDays} ngày`}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="no-notifications">
+                      Không có nguyên liệu nào sắp hết hạn.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

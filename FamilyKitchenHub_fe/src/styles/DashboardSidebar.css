@@ -230,6 +230,17 @@
   display: flex;
   align-items: center;
   margin-right: -4px;
+  
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* IE, Edge cũ */
+  -ms-overflow-style: none;
+}
+
+/* Chrome, Edge, Safari */
+.notification-list::-webkit-scrollbar {
+  display: none;
 }
 
 .notification-btn {
@@ -340,9 +351,30 @@
   font-weight: 500;
 }
 
+
 .no-notifications {
   padding: 24px 16px;
   text-align: center;
   color: #6b7280;
   font-size: 13px;
+}
+
+.notif-close-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: auto;
+  /* Push to right */
+}
+
+.notif-close-btn:hover {
+  background-color: #f3f4f6;
+  color: #ef4444;
 }

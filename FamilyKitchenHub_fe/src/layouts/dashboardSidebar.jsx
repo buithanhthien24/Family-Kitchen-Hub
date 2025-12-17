@@ -11,7 +11,9 @@ import {
   ChevronDown,
   UtensilsCrossed,
   Bell,
-  AlertCircle
+  AlertCircle,
+  X,
+  Trash2
 } from "lucide-react";
 import axios from "../hooks/axios";
 import dayjs from "dayjs";
@@ -48,7 +50,8 @@ export default function Sidebar() {
 
   // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
-  const [expiringItems, setExpiringItems] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState([]);
   const notificationRef = useRef(null);
 
   // Update indicator
@@ -122,38 +125,61 @@ export default function Sidebar() {
   }, []);
 
   // Fetch expiring ingredients
+  // Fetch expiring ingredients
+  // Fetch notifications from Backend
   useEffect(() => {
-    const fetchExpiringIngredients = async () => {
+    const fetchNotifications = async () => {
       if (!isLoggedIn || !user) return;
 
       try {
-        const res = await axios.get(`/inventory/user/${user.id}`);
-        const ingredients = res.data || [];
+        const res = await axios.get(`/users/${user.id}/notifications`);
+        const data = res.data || [];
 
-        // Filter items expiring in <= 3 days
-        const today = dayjs();
-        const expiring = ingredients.filter(item => {
-          if (!item.expirationDate) return false;
-          const expDate = dayjs(item.expirationDate);
-          const diffDays = expDate.diff(today, 'day');
-          return diffDays <= 3 && diffDays >= -1; // Include expired items too (up to -1 day for robustness)
-        });
+        // Filter out locally dismissed notifications (optional, if we want to hide them per session)
+        // If the backend doesn't support "mark as read/delete", we might just show all.
+        // But to keep the "Delete Ingredient" flow smooth, we hide the ones we just "acted" on.
+        const visible = data.filter(n => !dismissedIds.includes(n.id));
 
-        // Sort by expiration date (soonest first)
-        expiring.sort((a, b) => dayjs(a.expirationDate).diff(dayjs(b.expirationDate)));
+        // Sort by createdAt desc (newest first)
+        visible.sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
 
-        setExpiringItems(expiring);
+        setNotifications(visible);
       } catch (error) {
-        console.error("Error fetching expiring ingredients:", error);
+        console.error("Error fetching notifications:", error);
       }
     };
 
-    fetchExpiringIngredients();
+    fetchNotifications();
 
     // Refresh every 5 minutes
-    const interval = setInterval(fetchExpiringIngredients, 5 * 60 * 1000);
+    const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [isLoggedIn, user]);
+  }, [isLoggedIn, user, dismissedIds]);
+
+  const handleDeleteIngredient = async (e, notification) => {
+    e.stopPropagation();
+    const inventoryId = notification.inventoryItemId;
+
+    if (!inventoryId) {
+      // If no inventory ID (e.g. system message), maybe just dismiss locally?
+      setDismissedIds(prev => [...prev, notification.id]);
+      return;
+    }
+
+    if (!window.confirm("Bạn có chắc muốn xóa nguyên liệu này khỏi tủ lạnh?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/inventory/${inventoryId}`);
+      // Optimistic update: Hide the notification
+      setNotifications(prev => prev.filter(n => n.id !== notification.id));
+      setDismissedIds(prev => [...prev, notification.id]);
+    } catch (error) {
+      console.error("Error deleting ingredient from notification:", error);
+      alert("Không thể xóa nguyên liệu. " + (error.response?.data?.message || ""));
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -238,7 +264,7 @@ export default function Sidebar() {
             </Link>
           );
         })}
-                {/* NOTIFICATION BELL */}
+        {/* NOTIFICATION BELL */}
         {isLoggedIn && (
           <div className="notification-wrapper" ref={notificationRef}>
             <button
@@ -247,42 +273,43 @@ export default function Sidebar() {
               title="Notifications"
             >
               <Bell size={20} />
-              {expiringItems.length > 0 && (
-                <div className="notification-badge">{expiringItems.length}</div>
+              {notifications.length > 0 && (
+                <div className="notification-badge">{notifications.length}</div>
               )}
             </button>
 
             {showNotifications && (
               <div className="notification-dropdown">
                 <div className="notification-header">
-                  <span>Sắp hết hạn ({expiringItems.length})</span>
+                  <span>Thông báo ({notifications.length})</span>
                 </div>
                 <div className="notification-list">
-                  {expiringItems.length > 0 ? (
-                    expiringItems.map((item, index) => {
-                      const expDate = dayjs(item.expirationDate);
-                      const diffDays = expDate.diff(dayjs(), 'day');
-                      const isExpired = diffDays < 0;
-
+                  {notifications.length > 0 ? (
+                    notifications.map((item, index) => {
                       return (
-                        <div key={index} className="notification-item">
+                        <div key={item.id || index} className="notification-item">
                           <AlertCircle size={22} className="notif-icon" />
                           <div className="notif-content">
-                            <div className="notif-title">{item.ingredientName}</div>
+                            <div className="notif-title">{item.message}</div>
                             <div className="notif-time">
-                              {isExpired
-                                ? "Đã hết hạn!"
-                                : diffDays === 0
-                                  ? "Hết hạn hôm nay"
-                                  : `Hết hạn sau ${diffDays} ngày`}
+                              {item.createdAt ? dayjs(item.createdAt).format("DD/MM/YYYY HH:mm") : ""}
                             </div>
                           </div>
+                          {item.inventoryItemId && (
+                            <button
+                              className="notif-close-btn"
+                              onClick={(e) => handleDeleteIngredient(e, item)}
+                              title="Xóa nguyên liệu khỏi tủ lạnh"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
                       );
                     })
                   ) : (
                     <div className="no-notifications">
-                      Không có nguyên liệu nào sắp hết hạn.
+                      Không có thông báo nào.
                     </div>
                   )}
                 </div>

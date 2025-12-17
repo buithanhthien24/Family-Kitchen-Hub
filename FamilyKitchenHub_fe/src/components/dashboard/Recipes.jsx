@@ -900,7 +900,7 @@ export default function RecipeDashboard() {
                 </div>
                 <p className="card-desc">{r.instructions}</p>
 
-                <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+                <div style={{ gap: "8px", marginTop: "12px" }}>
                   <button
                     className="btn-add"
                     onClick={(e) => {

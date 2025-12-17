@@ -572,32 +572,118 @@ export default function RecipeDashboard() {
   };
 
   // =========================
+  //   HELPER: Kiểm tra nguyên liệu quá hạn
+  // =========================
+  const checkExpiredIngredients = (expDate) => {
+    if (!expDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    const expiry = new Date(expDate);
+    expiry.setHours(0, 0, 0, 0);
+    return expiry < today; // Quá hạn nếu expiry < today
+  };
+
+  // =========================
   //   COOK RECIPE - Trừ nguyên liệu từ tủ lạnh
   // =========================
   const handleCookRecipe = async (recipeId, recipeTitle) => {
     let loadingToast = null;
     
     try {
+      // Lấy userId từ localStorage
+      const userDataString = localStorage.getItem("user");
+      let userId = null;
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          userId = userData.user?.id || userData.id;
+        } catch (e) {
+          console.warn("Không thể parse user data:", e);
+        }
+      }
+
       // Kiểm tra authentication token
       const token = localStorage.getItem("token");
-      if (!token) {
-        // Nếu không có token, cần userId từ localStorage
-        const userDataString = localStorage.getItem("user");
-        if (!userDataString) {
-          toast.error("Vui lòng đăng nhập để nấu món ăn.", { autoClose: 3000 });
+      if (!token && !userId) {
+        toast.error("Vui lòng đăng nhập để nấu món ăn.", { autoClose: 3000 });
+        return;
+      }
+
+      // Kiểm tra nguyên liệu quá hạn TRƯỚC KHI nấu
+      loadingToast = toast.loading("Đang kiểm tra nguyên liệu...", { autoClose: false });
+      
+      try {
+        // Lấy recipe details để có danh sách ingredients
+        const recipeRes = await axios.get(`/recipes/${recipeId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const recipe = recipeRes.data;
+        const recipeIngredients = recipe.ingredients || [];
+
+        // Lấy inventory items của user
+        if (!userId) {
+          toast.dismiss(loadingToast);
+          toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", { autoClose: 3000 });
           return;
         }
 
-        const userData = JSON.parse(userDataString);
-        const userId = userData.user?.id || userData.id;
+        const inventoryRes = await axios.get(`/inventory/user/${userId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const inventoryItems = inventoryRes.data || [];
 
+        // Kiểm tra xem có nguyên liệu nào trong recipe mà trong inventory đã quá hạn không
+        const expiredIngredients = [];
+        recipeIngredients.forEach((recipeIng) => {
+          const recipeIngredientId = recipeIng.ingredientId || recipeIng.ingredient?.id || recipeIng.id;
+          if (!recipeIngredientId) return;
+
+          // Tìm các inventory items có cùng ingredientId
+          const matchingInventoryItems = inventoryItems.filter(
+            (inv) => inv.ingredientId === recipeIngredientId || inv.ingredientId === String(recipeIngredientId)
+          );
+
+          // Kiểm tra xem có item nào quá hạn không
+          const hasExpired = matchingInventoryItems.some((inv) => {
+            if (!inv.expirationDate) return false;
+            return checkExpiredIngredients(inv.expirationDate);
+          });
+
+          if (hasExpired) {
+            const ingredientName = recipeIng.ingredientName || recipeIng.ingredient?.name || recipeIng.name || "Nguyên liệu không xác định";
+            expiredIngredients.push(ingredientName);
+          }
+        });
+
+        // Nếu có nguyên liệu quá hạn, không cho phép nấu
+        if (expiredIngredients.length > 0) {
+          toast.dismiss(loadingToast);
+          const expiredList = expiredIngredients.join(", ");
+          toast.error(
+            `Không thể nấu món ăn này vì có nguyên liệu đã quá hạn: ${expiredList}. Vui lòng kiểm tra tủ lạnh và xóa các nguyên liệu quá hạn trước khi nấu.`,
+            { autoClose: 6000 }
+          );
+          return;
+        }
+      } catch (checkError) {
+        console.warn("Lỗi khi kiểm tra nguyên liệu quá hạn:", checkError);
+        // Nếu không thể kiểm tra, vẫn cho phép nấu (backend sẽ kiểm tra lại)
+        toast.dismiss(loadingToast);
+        loadingToast = null;
+      }
+
+      // Nếu không có nguyên liệu quá hạn, tiếp tục nấu
+      if (!token) {
+        // Nếu không có token, cần userId từ localStorage
         if (!userId) {
           toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", { autoClose: 3000 });
           return;
         }
 
         // Hiển thị loading toast
-        loadingToast = toast.loading("Đang kiểm tra nguyên liệu...", { autoClose: false });
+        if (!loadingToast) {
+          loadingToast = toast.loading("Đang nấu món ăn...", { autoClose: false });
+        }
 
         // Gọi API cook recipe với userId (vì không có token)
         const response = await cookRecipe(recipeId, userId);
@@ -623,7 +709,9 @@ export default function RecipeDashboard() {
         }
 
         // Hiển thị loading toast
-        loadingToast = toast.loading("Đang kiểm tra nguyên liệu...", { autoClose: false });
+        if (!loadingToast) {
+          loadingToast = toast.loading("Đang nấu món ăn...", { autoClose: false });
+        }
 
         try {
           // Thử gọi API cook recipe không cần userId (sẽ lấy từ token)

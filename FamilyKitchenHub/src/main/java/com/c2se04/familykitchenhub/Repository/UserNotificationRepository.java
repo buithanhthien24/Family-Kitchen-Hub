@@ -12,4 +12,8 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     List<UserNotification> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     void deleteByUserId(Long userId);
+    
+    void deleteByInventoryItemId(Long inventoryItemId);
+    
+    List<UserNotification> findByInventoryItemId(Long inventoryItemId);
 }

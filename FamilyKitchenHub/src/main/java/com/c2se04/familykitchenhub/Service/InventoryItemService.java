@@ -8,6 +8,7 @@ import com.c2se04.familykitchenhub.model.Ingredient;
 import com.c2se04.familykitchenhub.Repository.InventoryItemRepository;
 import com.c2se04.familykitchenhub.Repository.UserRepository;
 import com.c2se04.familykitchenhub.Repository.IngredientRepository;
+import com.c2se04.familykitchenhub.Repository.UserNotificationRepository;
 import com.c2se04.familykitchenhub.Exception.ResourceNotFoundException;
 import com.c2se04.familykitchenhub.Exception.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,16 +25,19 @@ public class InventoryItemService {
     private final UserRepository userRepository; // Giả định đã tồn tại
     private final IngredientRepository ingredientRepository; // Giả định đã tồn tại
     private final RecipeService recipeService; // Dùng để lấy công thức
+    private final UserNotificationRepository userNotificationRepository; // Dùng để xóa thông báo hết hạn
 
     @Autowired
     public InventoryItemService(InventoryItemRepository inventoryItemRepository,
                                 UserRepository userRepository,
                                 IngredientRepository ingredientRepository,
-                                RecipeService recipeService) {
+                                RecipeService recipeService,
+                                UserNotificationRepository userNotificationRepository) {
         this.inventoryItemRepository = inventoryItemRepository;
         this.userRepository = userRepository;
         this.ingredientRepository = ingredientRepository;
         this.recipeService = recipeService;
+        this.userNotificationRepository = userNotificationRepository;
     }
 
     // CREATE: Thêm một nguyên liệu vào tủ lạnh
@@ -91,12 +95,23 @@ public class InventoryItemService {
         return inventoryItemRepository.save(existingItem);
     }
 
+    /**
+     * Xóa các thông báo hết hạn liên quan đến một inventory item
+     */
+    private void deleteNotificationsForInventoryItem(Long inventoryItemId) {
+        if (inventoryItemId != null) {
+            userNotificationRepository.deleteByInventoryItemId(inventoryItemId);
+        }
+    }
+
     // DELETE: Xóa một nguyên liệu
     @Transactional
     public void deleteInventoryItem(Long id) {
         if (!inventoryItemRepository.existsById(id)) {
             throw new ResourceNotFoundException("InventoryItem", "id", id);
         }
+        // Xóa các thông báo hết hạn liên quan trước khi xóa inventory item
+        deleteNotificationsForInventoryItem(id);
         inventoryItemRepository.deleteById(id);
     }
 
@@ -173,6 +188,8 @@ public class InventoryItemService {
                     // Item này đủ để trừ hết số lượng còn lại
                     Float newQuantity = itemQuantity - remainingToDeduct;
                     if (newQuantity <= 0) {
+                        // Xóa thông báo hết hạn trước khi xóa item
+                        deleteNotificationsForInventoryItem(item.getId());
                         inventoryItemRepository.delete(item);
                     } else {
                         item.setQuantity(newQuantity);
@@ -181,6 +198,8 @@ public class InventoryItemService {
                     remainingToDeduct = 0.0f;
                 } else {
                     // Item này không đủ, trừ hết item này và tiếp tục với item tiếp theo
+                    // Xóa thông báo hết hạn trước khi xóa item
+                    deleteNotificationsForInventoryItem(item.getId());
                     inventoryItemRepository.delete(item);
                     remainingToDeduct -= itemQuantity;
                 }
@@ -328,6 +347,8 @@ public class InventoryItemService {
                     // Item này đủ để trừ hết số lượng còn lại
                     Float newQuantity = itemQuantity - remainingToDeduct;
                     if (newQuantity <= 0) {
+                        // Xóa thông báo hết hạn trước khi xóa item
+                        deleteNotificationsForInventoryItem(item.getId());
                         inventoryItemRepository.delete(item);
                     } else {
                         item.setQuantity(newQuantity);
@@ -337,6 +358,8 @@ public class InventoryItemService {
                     remainingToDeduct = 0.0f;
                 } else {
                     // Item này không đủ, trừ hết item này và tiếp tục với item tiếp theo
+                    // Xóa thông báo hết hạn trước khi xóa item
+                    deleteNotificationsForInventoryItem(item.getId());
                     inventoryItemRepository.delete(item);
                     remainingToDeduct -= itemQuantity;
                 }

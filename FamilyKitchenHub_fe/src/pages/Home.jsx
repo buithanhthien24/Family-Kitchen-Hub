@@ -249,7 +249,7 @@ function Home() {
 
             <div className="hero-buttons">
               <button
-                className="btn-primary"
+                className="btn-primary-suggestions"
                 onClick={() => navigate("/manage/recommendations")}
                 style={{
                   display: "flex",

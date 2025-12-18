@@ -63,7 +63,7 @@ h1 {
 }
 
 .btn-primary-suggestions {
-  background: #ea580c;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
   color: #fff;
   border: none;
   padding: 12px 24px;
@@ -74,8 +74,8 @@ h1 {
   transition: background 0.2s;
 }
 
-.btn-primary:hover {
-  background: #c2410c;
+.btn-primary-suggestions:hover {
+  background: #f57948;
 }
 
 .btn-outline {
@@ -322,7 +322,7 @@ h1 {
   transition: all 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   opacity: 0;
-  animation: fadeInUp 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeInUp {
@@ -505,6 +505,14 @@ h1 {
   flex-shrink: 0;
   padding: 0 8px;
   box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.bookmarked-slide.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .slider-btn {

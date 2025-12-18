@@ -9,7 +9,7 @@ import {
   HeartPulse,
   Apple,
   ShoppingCart,
-  Sparkles,
+  Sparkles,   
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -304,7 +304,8 @@ function Home() {
                     return (
                       <div
                         key={recipeId || `bookmarked-${index}`}
-                        className="bookmarked-slide"
+                        className="bookmarked-slide scroll-reveal"
+                        style={{ transitionDelay: `${index * 0.3}s` }}
                       >
                         <div
                           className="bookmarked-card"
@@ -400,11 +401,11 @@ function Home() {
               return (
                 <div
                   key={recipeId || `recipe-${index}`}
-                  className="suggestion-card"
+                  className="suggestion-card scroll-reveal"
                   onClick={() => recipeId && navigate(`/manage/recipesdetails/${recipeId}`)}
-                  style={{ animationDelay: `${index * 0.3}s` }}
+                  style={{ transitionDelay: `${index * 0.3}s` }}
                 >
-                  <div className="suggestion-image">
+                  <div className="suggestion-image scroll-reveal" style={{ transitionDelay: `${index * 0.3}s` }}>
                     <img
                       src={convertMediaUrl(recipe.imageUrl) || "/placeholder-recipe.jpg"}
                       alt={recipe.title}
@@ -460,7 +461,7 @@ function Home() {
         </div>
 
         <div className="features-grid">
-          <div className="feature-card scroll-reveal" style={{ transitionDelay: '0.1s' }}>
+          <div className="feature-card scroll-reveal" style={{ transitionDelay: '0.3s' }}>
             <div className="feature-icon">
               <Calendar size={24} color="#f97316" />
             </div>

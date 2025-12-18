@@ -544,7 +544,7 @@ export default function FridgeManager() {
       {/* Stats Overview */}
       <div className="stats-overview">
         <Tooltip title={getItemsByStatus("Total")} arrow>
-          <div className="stat-card scroll-reveal" style={{ transitionDelay: '0.1s' }}>
+          <div className="stat-card scroll-reveal" style={{ transitionDelay: '1s' }}>
             <div className="stat-icon total">
               <Package size={28} />
             </div>
@@ -596,10 +596,10 @@ export default function FridgeManager() {
           return (
             <div
               key={item.id}
-              className={`ingredient-card ${status
+              className={`ingredient-card scroll-reveal ${status
                 .toLowerCase()
-                .replace(" ", "-")} scroll-reveal`}
-              style={{ transitionDelay: `${index * 0.05}s` }}
+                .replace(" ", "-")}`}
+              style={{ transitionDelay: `${index * 0.1}s` }}
             >
               <div className="card-header">
                 <h3>{item.ingredientName}</h3>

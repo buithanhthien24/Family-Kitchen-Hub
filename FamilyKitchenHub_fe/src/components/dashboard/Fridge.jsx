@@ -60,6 +60,43 @@ export default function FridgeManager() {
     return () => observer.disconnect();
   }, [ingredients]);
 
+  // Helper function to check if ingredient is expired
+  const checkExpired = (expDate) => {
+    if (!expDate) {
+      console.log("  ⚠️ Không có expirationDate");
+      return false;
+    }
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Xử lý nhiều format date có thể có
+      let expiry;
+      if (typeof expDate === 'string') {
+        // Nếu là string, parse nó
+        expiry = new Date(expDate);
+      } else if (expDate instanceof Date) {
+        expiry = new Date(expDate);
+      } else {
+        expiry = new Date(expDate);
+      }
+
+      expiry.setHours(0, 0, 0, 0);
+
+      // Expires the day AFTER the expiration date
+      const isExpired = today > expiry; // Changed from expiry < today
+      const diffDays = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+
+      console.log(`  📅 Expiration check: ${expDate} -> ${expiry.toISOString().split('T')[0]}, Today: ${today.toISOString().split('T')[0]}, Diff: ${diffDays} days, Expired: ${isExpired}`);
+
+      return isExpired;
+    } catch (error) {
+      console.error("  ❌ Lỗi khi parse expirationDate:", expDate, error);
+      return false; // Nếu không parse được, không coi là quá hạn
+    }
+  };
+
   // GET inventory list
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -69,9 +106,152 @@ export default function FridgeManager() {
 
         const userData = JSON.parse(userDataString);
         const userId = userData.id;
+        const token = localStorage.getItem("token");
 
         const res = await axios.get(`/inventory/user/${userId}`);
-        setIngredients(res.data);
+        const ingredientsData = res.data || [];
+        setIngredients(ingredientsData);
+
+        // Kiểm tra và tạo notification cho các nguyên liệu hết hạn
+        console.log("🔍 Kiểm tra nguyên liệu hết hạn:", {
+          totalIngredients: ingredientsData.length,
+          ingredients: ingredientsData.map(item => ({
+            id: item.id,
+            name: item.ingredientName,
+            expirationDate: item.expirationDate,
+            isExpired: item.expirationDate ? checkExpired(item.expirationDate) : false
+          }))
+        });
+
+        const expiredIngredients = ingredientsData.filter(item => {
+          if (!item.expirationDate) return false;
+          const isExpired = checkExpired(item.expirationDate);
+          console.log(`  📅 ${item.ingredientName} (${item.expirationDate}): ${isExpired ? 'HẾT HẠN' : 'Còn hạn'}`);
+          return isExpired;
+        });
+
+        console.log(`📊 Tìm thấy ${expiredIngredients.length} nguyên liệu hết hạn:`, expiredIngredients.map(i => i.ingredientName));
+
+        if (expiredIngredients.length > 0) {
+          console.log(`📊 Bắt đầu tạo notification cho ${expiredIngredients.length} nguyên liệu hết hạn`);
+
+          // Tạo notification cho từng nguyên liệu hết hạn
+          const notificationPromises = expiredIngredients.map(async (item) => {
+            const formatDate = (d) => {
+              if (!d) return "N/A";
+              const dt = new Date(d);
+              return dt.toLocaleDateString('vi-VN');
+            };
+
+            const notificationMessage = `${item.ingredientName} đã hết hạn (${formatDate(item.expirationDate)})`;
+
+            // Tạo notification qua API backend
+            // Backend expects NotificationRequestDTO - thử nhiều format
+            const notificationPayloads = [
+              // Format 1: camelCase với inventoryItemId là number
+              {
+                message: notificationMessage,
+                type: "EXPIRED_INGREDIENT",
+                inventoryItemId: Number(item.id)
+              },
+              // Format 2: camelCase với inventoryItemId là string
+              {
+                message: notificationMessage,
+                type: "EXPIRED_INGREDIENT",
+                inventoryItemId: String(item.id)
+              },
+              // Format 3: snake_case
+              {
+                message: notificationMessage,
+                type: "EXPIRED_INGREDIENT",
+                inventory_item_id: Number(item.id)
+              },
+              // Format 4: chỉ có message và type (không có inventoryItemId)
+              {
+                message: notificationMessage,
+                type: "EXPIRED_INGREDIENT"
+              }
+            ];
+
+            let lastError = null;
+            for (let i = 0; i < notificationPayloads.length; i++) {
+              const notificationPayload = notificationPayloads[i];
+              try {
+                console.log(`📝 [Format ${i + 1}] Đang tạo notification cho: ${item.ingredientName}`, {
+                  message: notificationMessage,
+                  inventoryItemId: item.id,
+                  userId: userId,
+                  endpoint: `/users/${userId}/notifications`,
+                  payload: notificationPayload
+                });
+
+                const response = await axios.post(`/users/${userId}/notifications`, notificationPayload, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+
+                console.log(`✅ Đã tạo notification thành công cho ${item.ingredientName} (Format ${i + 1}):`, response.data);
+                return { success: true, item: item.ingredientName, data: response.data, format: i + 1 };
+              } catch (notifError) {
+                lastError = notifError;
+                const errorDetails = {
+                  status: notifError.response?.status,
+                  statusText: notifError.response?.statusText,
+                  data: notifError.response?.data,
+                  message: notifError.response?.data?.message || notifError.message,
+                  endpoint: `/users/${userId}/notifications`,
+                  payload: notificationPayload,
+                  format: i + 1
+                };
+                console.warn(`⚠️ Format ${i + 1} failed cho ${item.ingredientName}:`, errorDetails);
+
+                // Nếu không phải lỗi 400, không thử format khác
+                if (notifError.response?.status !== 400) {
+                  break;
+                }
+              }
+            }
+
+            // Nếu tất cả format đều fail
+            const errorDetails = {
+              status: lastError?.response?.status,
+              statusText: lastError?.response?.statusText,
+              data: lastError?.response?.data,
+              message: lastError?.response?.data?.message || lastError?.message,
+              endpoint: `/users/${userId}/notifications`,
+              allPayloads: notificationPayloads
+            };
+            console.error(`❌ Tất cả format đều fail cho ${item.ingredientName}:`, errorDetails);
+            console.error("Full error response:", JSON.stringify(errorDetails, null, 2));
+            return { success: false, item: item.ingredientName, error: lastError, details: errorDetails };
+          });
+
+          // Đợi tất cả notifications được tạo
+          const results = await Promise.all(notificationPromises);
+          const successCount = results.filter(r => r.success).length;
+          const failCount = results.filter(r => !r.success).length;
+
+          console.log(`📊 Kết quả tạo notification: ${successCount} thành công, ${failCount} thất bại`);
+          if (successCount > 0) {
+            console.log(`✅ Đã tạo thành công ${successCount} notification(s):`, results.filter(r => r.success).map(r => r.item));
+          }
+          if (failCount > 0) {
+            console.warn(`⚠️ Không thể tạo ${failCount} notification(s):`, results.filter(r => !r.success).map(r => r.item));
+          }
+
+          // Trigger event để sidebar refresh notifications ngay lập tức (chỉ khi có ít nhất 1 notification thành công)
+          if (successCount > 0) {
+            console.log("🔄 Triggering refreshNotifications event để hiển thị trong notification-wrapper");
+            // Đợi một chút để backend xử lý xong và commit vào database
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('refreshNotifications'));
+              console.log("✅ Đã dispatch refreshNotifications event");
+            }, 1000); // Tăng thời gian đợi lên 1 giây để đảm bảo backend xử lý xong
+          } else {
+            console.warn("⚠️ Không có notification nào được tạo thành công, không refresh sidebar");
+          }
+        } else {
+          console.log("ℹ️ Không có nguyên liệu hết hạn");
+        }
       } catch (error) {
         console.error("Error fetching ingredients:", error);
       }
@@ -224,10 +404,18 @@ export default function FridgeManager() {
   const getStatus = (expDate) => {
     if (!expDate) return "Fresh";
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to start of day
     const expiry = new Date(expDate);
-    const diff = (expiry - today) / (1000 * 60 * 60 * 24);
+    expiry.setHours(0, 0, 0, 0); // Normalize expiry to start of day
 
-    if (diff < 0) return "Expired";
+    // Expires the day AFTER expiration date
+    // If today is 2023-10-27 and expiry is 2023-10-26, then today > expiry is true, meaning it's expired.
+    // If today is 2023-10-26 and expiry is 2023-10-26, then today > expiry is false, meaning it's not yet expired.
+    if (today > expiry) return "Expired";
+
+    // Calculate difference in days for "Expiring Soon"
+    const diff = (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
     if (diff <= 3) return "Expiring Soon";
     return "Fresh";
   };
@@ -290,9 +478,37 @@ export default function FridgeManager() {
       setTimeout(() => {
         setIsLoading(false);
         console.error("Error deleting ingredient:", error);
-        toast.error("Không thể xóa nguyên liệu!", {
+
+        // Xử lý lỗi chi tiết hơn
+        let errorMessage = "Không thể xóa nguyên liệu!";
+
+        if (error.response) {
+          const status = error.response.status;
+          const data = error.response.data;
+          const errorMsg = data?.message || data?.error || "";
+
+          // Kiểm tra lỗi foreign key constraint
+          if (errorMsg.includes("foreign key constraint") ||
+            errorMsg.includes("Cannot delete or update a parent row") ||
+            errorMsg.includes("user_notifications") ||
+            errorMsg.includes("inventory_item_id")) {
+            errorMessage = "Không thể xóa nguyên liệu này vì nó đang được sử dụng trong thông báo. Vui lòng xóa các thông báo liên quan trước.";
+          } else if (status === 404) {
+            errorMessage = "Không tìm thấy nguyên liệu cần xóa.";
+          } else if (status === 403) {
+            errorMessage = "Bạn không có quyền xóa nguyên liệu này.";
+          } else if (status === 500) {
+            errorMessage = errorMsg || "Lỗi server. Vui lòng thử lại sau.";
+          } else {
+            errorMessage = errorMsg || `Lỗi ${status}: Không thể xóa nguyên liệu.`;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        toast.error(errorMessage, {
           position: "top-right",
-          autoClose: 2000,
+          autoClose: 5000,
         });
       }, 2000);
     }
@@ -328,7 +544,7 @@ export default function FridgeManager() {
       {/* Stats Overview */}
       <div className="stats-overview">
         <Tooltip title={getItemsByStatus("Total")} arrow>
-          <div className="stat-card scroll-reveal" style={{ transitionDelay: '0.1s' }}>
+          <div className="stat-card scroll-reveal" style={{ transitionDelay: '1s' }}>
             <div className="stat-icon total">
               <Package size={28} />
             </div>
@@ -380,10 +596,10 @@ export default function FridgeManager() {
           return (
             <div
               key={item.id}
-              className={`ingredient-card ${status
+              className={`ingredient-card scroll-reveal ${status
                 .toLowerCase()
-                .replace(" ", "-")} scroll-reveal`}
-              style={{ transitionDelay: `${index * 0.05}s` }}
+                .replace(" ", "-")}`}
+              style={{ transitionDelay: `${index * 0.1}s` }}
             >
               <div className="card-header">
                 <h3>{item.ingredientName}</h3>
@@ -543,8 +759,8 @@ export default function FridgeManager() {
                   />
 
                   <DatePicker
-                    disablePast
                     label="Purchased Date (Ngày mua)"
+                    maxDate={dayjs()}
                     value={newIngredient.purchasedAt ? dayjs(newIngredient.purchasedAt) : null}
                     onChange={(newValue) =>
                       setNewIngredient({

@@ -66,6 +66,9 @@ public class UserService {
         if (updatedDetails.getCountry() != null) {
             existingUser.setCountry(updatedDetails.getCountry());
         }
+        if (updatedDetails.getRole() != null) {
+            existingUser.setRole(updatedDetails.getRole());
+        }
         return userRepository.save(existingUser);
     }
 
@@ -83,7 +86,7 @@ public class UserService {
     public EditProfileResponseDTO getProfile(Long userId) {
         User user = getUserById(userId);
         List<FamilyMember> familyMembers = familyMemberRepository.findByUserId(userId);
-        
+
         // Find account owner - handle null isAccountOwner safely
         FamilyMember accountOwner = null;
         if (familyMembers != null && !familyMembers.isEmpty()) {
@@ -92,14 +95,14 @@ public class UserService {
                     .findFirst()
                     .orElse(familyMembers.get(0)); // Use first member if no account owner found
         }
-        
+
         EditProfileResponseDTO response = new EditProfileResponseDTO();
         response.setId(user.getId());
         response.setFullName(user.getFullName());
         response.setEmail(user.getEmail());
         response.setCountry(user.getCountry());
         response.setNumberOfFamilyMembers(familyMembers != null ? familyMembers.size() : 0);
-        
+
         if (accountOwner != null) {
             // Convert Gender enum to string
             if (accountOwner.getGender() != null) {
@@ -110,7 +113,7 @@ public class UserService {
             // tastePreferences -> favorite
             response.setFavorite(accountOwner.getTastePreferences());
         }
-        
+
         // Calculate age groups from family members
         EditProfileResponseDTO.AgeGroupsDTO ageGroups = new EditProfileResponseDTO.AgeGroupsDTO();
         if (familyMembers != null) {
@@ -130,7 +133,7 @@ public class UserService {
             }
         }
         response.setAgeGroups(ageGroups);
-        
+
         return response;
     }
 
@@ -138,7 +141,7 @@ public class UserService {
     @Transactional
     public EditProfileResponseDTO updateProfile(Long userId, EditProfileRequestDTO requestDTO) {
         User user = getUserById(userId);
-        
+
         // Update User fields
         if (requestDTO.getFullName() != null) {
             user.setFullName(requestDTO.getFullName());
@@ -150,7 +153,7 @@ public class UserService {
             user.setCountry(requestDTO.getCountry());
         }
         user = userRepository.save(user);
-        
+
         // Find or create account owner - handle null isAccountOwner safely
         List<FamilyMember> familyMembers = familyMemberRepository.findByUserId(userId);
         FamilyMember accountOwner = null;
@@ -160,7 +163,7 @@ public class UserService {
                     .findFirst()
                     .orElse(null);
         }
-        
+
         if (accountOwner == null) {
             // Create new account owner if doesn't exist
             accountOwner = new FamilyMember();
@@ -168,7 +171,7 @@ public class UserService {
             accountOwner.setName(user.getFullName() != null ? user.getFullName() : user.getUsername());
             accountOwner.setIsAccountOwner(true);
         }
-        
+
         // Update account owner fields
         if (requestDTO.getGender() != null && !requestDTO.getGender().trim().isEmpty()) {
             try {
@@ -183,9 +186,9 @@ public class UserService {
         if (requestDTO.getFavorite() != null) {
             accountOwner.setTastePreferences(requestDTO.getFavorite());
         }
-        
+
         familyMemberRepository.save(accountOwner);
-        
+
         // Return updated profile
         return getProfile(userId);
     }

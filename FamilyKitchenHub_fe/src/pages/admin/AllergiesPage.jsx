@@ -49,6 +49,12 @@ export default function AllergiesPage() {
     };
 
     const handleSaveEdit = async (id) => {
+        // Validate required field
+        if (!editForm.name || !editForm.name.trim()) {
+            toast.error('Please enter an allergy name');
+            return;
+        }
+
         try {
             await updateAllergy(id, editForm);
             toast.success('Allergy updated successfully!');
@@ -88,6 +94,12 @@ export default function AllergiesPage() {
     };
 
     const handleSaveNew = async () => {
+        // Validate required field
+        if (!newAllergy.name || !newAllergy.name.trim()) {
+            toast.error('Please enter an allergy name');
+            return;
+        }
+
         try {
             await createAllergy(newAllergy);
             toast.success('Allergy created successfully!');

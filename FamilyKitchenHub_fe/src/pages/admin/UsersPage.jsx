@@ -131,13 +131,9 @@ export default function UsersPage() {
                                     <tr key={user.id} className="editing-row">
                                         <td>{user.id}</td>
                                         <td>
-                                            <input
-                                                type="text"
-                                                className="inline-input"
-                                                value={editForm.username}
-                                                onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                                                autoFocus
-                                            />
+                                            <span className="read-only-value" style={{ padding: '8px', display: 'block', color: '#666' }}>
+                                                {editForm.username}
+                                            </span>
                                         </td>
                                         <td>
                                             <input
@@ -148,12 +144,9 @@ export default function UsersPage() {
                                             />
                                         </td>
                                         <td>
-                                            <input
-                                                type="email"
-                                                className="inline-input"
-                                                value={editForm.email}
-                                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                            />
+                                            <span className="read-only-value" style={{ padding: '8px', display: 'block', color: '#666' }}>
+                                                {editForm.email}
+                                            </span>
                                         </td>
                                         <td>
                                             <input
@@ -164,14 +157,9 @@ export default function UsersPage() {
                                             />
                                         </td>
                                         <td>
-                                            <select
-                                                className="inline-select"
-                                                value={editForm.role}
-                                                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                                            >
-                                                <option value="USER">USER</option>
-                                                <option value="ADMIN">ADMIN</option>
-                                            </select>
+                                            <span className="read-only-value" style={{ padding: '8px', display: 'block', color: '#666' }}>
+                                                {editForm.role}
+                                            </span>
                                         </td>
                                         <td>{formatDate(user.createdAt)}</td>
                                         <td>

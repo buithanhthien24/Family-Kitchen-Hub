@@ -17,7 +17,7 @@ import ConfirmModal from "../ConfirmModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { convertMediaUrl } from "../../utils/mediaUtils";
-import { cookRecipe, getCookableRecipes, getBookmarkedRecipes, addRecipeBookmark, removeRecipeBookmark } from "../../service/recipesApi";
+import { getCookableRecipes, getBookmarkedRecipes, addRecipeBookmark, removeRecipeBookmark } from "../../service/recipesApi";
 import { createReminder, getUserReminders, deleteReminder } from "../../service/reminderApi";
 
 export default function RecipeDashboard() {
@@ -253,18 +253,38 @@ export default function RecipeDashboard() {
         let result = recipes;
 
         if (currentFilters.cookable) {
-          const cookableRecipes = await getCookableRecipes(userId);
-          result = cookableRecipes;
+          try {
+            const cookableRecipes = await getCookableRecipes(userId);
+            result = cookableRecipes;
+          } catch (error) {
+            // Silently handle 500 errors - backend may not have this endpoint implemented yet
+            if (error.response?.status !== 500) {
+              console.error("Error fetching cookable recipes:", error);
+            }
+            // Fallback to all recipes if endpoint fails
+            result = recipes;
+          }
         }
 
         if (currentFilters.bookmarked) {
-          const bookmarkedRecipes = await getBookmarkedRecipes(userId);
-          const bookmarkedIds = new Set(bookmarkedRecipes.map(r => r.id));
+          try {
+            const bookmarkedRecipes = await getBookmarkedRecipes(userId);
+            const bookmarkedIds = new Set(bookmarkedRecipes.map(r => r.id));
 
-          if (currentFilters.cookable) {
-            result = result.filter(r => bookmarkedIds.has(r.id));
-          } else {
-            result = bookmarkedRecipes;
+            if (currentFilters.cookable) {
+              result = result.filter(r => bookmarkedIds.has(r.id));
+            } else {
+              result = bookmarkedRecipes;
+            }
+          } catch (error) {
+            // Silently handle 500 errors - backend may not have this endpoint implemented yet
+            if (error.response?.status !== 500) {
+              console.error("Error fetching bookmarked recipes:", error);
+            }
+            // Fallback: if cookable filter is active, keep current result; otherwise use all recipes
+            if (!currentFilters.cookable) {
+              result = recipes;
+            }
           }
         }
 
@@ -385,7 +405,10 @@ export default function RecipeDashboard() {
           setBookmarkedRecipes(bookmarkedIds);
         }
       } catch (error) {
-        console.error("Error fetching bookmarked recipes:", error);
+        // Silently handle 500 errors - backend may not have these endpoints implemented yet
+        if (error.response?.status !== 500) {
+          console.error("Error fetching bookmarked recipes:", error);
+        }
       }
     };
 
@@ -932,299 +955,9 @@ export default function RecipeDashboard() {
   };
 
   // =========================
-  //   HELPER: Kiểm tra nguyên liệu quá hạn
+  //   COOK RECIPE - Đã chuyển vào DetailRecipes.jsx
+  //   Các hàm handleCookRecipe và showCookSuccessMessage đã được di chuyển
   // =========================
-  const checkExpiredIngredients = (expDate) => {
-    if (!expDate) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day
-    const expiry = new Date(expDate);
-    expiry.setHours(0, 0, 0, 0);
-    // Ingredient expires the day AFTER the expiration date
-    // So it's expired if today > expiry (not >=)
-    return today > expiry;
-  };
-
-  // =========================
-  //   COOK RECIPE - Trừ nguyên liệu từ tủ lạnh
-  // =========================
-  const handleCookRecipe = async (recipeId, recipeTitle) => {
-    let loadingToast = null;
-
-    try {
-      // Lấy userId từ localStorage
-      const userDataString = localStorage.getItem("user");
-      let userId = null;
-      if (userDataString) {
-        try {
-          const userData = JSON.parse(userDataString);
-          userId = userData.user?.id || userData.id;
-        } catch (e) {
-          console.warn("Không thể parse user data:", e);
-        }
-      }
-
-      // Kiểm tra authentication token
-      const token = localStorage.getItem("token");
-      if (!token && !userId) {
-        toast.error("Vui lòng đăng nhập để nấu món ăn.", { autoClose: 3000 });
-        return;
-      }
-
-      // Kiểm tra nguyên liệu quá hạn TRƯỚC KHI nấu
-      loadingToast = toast.loading("Đang kiểm tra nguyên liệu...", { autoClose: false });
-
-      try {
-        // Lấy recipe details để có danh sách ingredients
-        const recipeRes = await axios.get(`/recipes/${recipeId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const recipe = recipeRes.data;
-        const recipeIngredients = recipe.ingredients || [];
-
-        // Lấy inventory items của user
-        if (!userId) {
-          toast.dismiss(loadingToast);
-          toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", { autoClose: 3000 });
-          return;
-        }
-
-        const inventoryRes = await axios.get(`/inventory/user/${userId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const inventoryItems = inventoryRes.data || [];
-
-        // Kiểm tra xem có nguyên liệu nào trong recipe mà trong inventory đã quá hạn không
-        const expiredIngredients = [];
-        recipeIngredients.forEach((recipeIng) => {
-          const recipeIngredientId = recipeIng.ingredientId || recipeIng.ingredient?.id || recipeIng.id;
-          if (!recipeIngredientId) return;
-
-          // Tìm các inventory items có cùng ingredientId
-          const matchingInventoryItems = inventoryItems.filter(
-            (inv) => inv.ingredientId === recipeIngredientId || inv.ingredientId === String(recipeIngredientId)
-          );
-
-          // Kiểm tra xem có item nào quá hạn không
-          const hasExpired = matchingInventoryItems.some((inv) => {
-            if (!inv.expirationDate) return false;
-            return checkExpiredIngredients(inv.expirationDate);
-          });
-
-          if (hasExpired) {
-            const ingredientName = recipeIng.ingredientName || recipeIng.ingredient?.name || recipeIng.name || "Nguyên liệu không xác định";
-            expiredIngredients.push(ingredientName);
-          }
-        });
-
-        // Nếu có nguyên liệu quá hạn, không cho phép nấu
-        if (expiredIngredients.length > 0) {
-          toast.dismiss(loadingToast);
-          const expiredList = expiredIngredients.join(", ");
-          toast.error(
-            `Không thể nấu món ăn này vì có nguyên liệu đã quá hạn: ${expiredList}. Vui lòng kiểm tra tủ lạnh và xóa các nguyên liệu quá hạn trước khi nấu.`,
-            { autoClose: 6000 }
-          );
-          return;
-        }
-      } catch (checkError) {
-        console.warn("Lỗi khi kiểm tra nguyên liệu quá hạn:", checkError);
-        // Nếu không thể kiểm tra, vẫn cho phép nấu (backend sẽ kiểm tra lại)
-        toast.dismiss(loadingToast);
-        loadingToast = null;
-      }
-
-      // Nếu không có nguyên liệu quá hạn, tiếp tục nấu
-      if (!token) {
-        // Nếu không có token, cần userId từ localStorage
-        if (!userId) {
-          toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", { autoClose: 3000 });
-          return;
-        }
-
-        // Hiển thị loading toast
-        if (!loadingToast) {
-          loadingToast = toast.loading("Đang nấu món ăn...", { autoClose: false });
-        }
-
-        // Gọi API cook recipe với userId (vì không có token)
-        const response = await cookRecipe(recipeId, userId);
-
-        // Đóng loading toast
-        toast.dismiss(loadingToast);
-        loadingToast = null;
-
-        // Hiển thị thông báo thành công và chuyển trang
-        showCookSuccessMessage(response, recipeTitle, recipeId);
-      } else {
-        // Có token → userId sẽ tự động lấy từ token, không cần gửi userId
-        // Nhưng nếu backend không parse được User từ token, sẽ cần userId fallback
-        let userIdFallback = null;
-        try {
-          const userDataString = localStorage.getItem("user");
-          if (userDataString) {
-            const userData = JSON.parse(userDataString);
-            userIdFallback = userData.user?.id || userData.id;
-          }
-        } catch (e) {
-          console.warn("Không thể lấy userId từ localStorage:", e);
-        }
-
-        // Hiển thị loading toast
-        if (!loadingToast) {
-          loadingToast = toast.loading("Đang nấu món ăn...", { autoClose: false });
-        }
-
-        try {
-          // Thử gọi API cook recipe không cần userId (sẽ lấy từ token)
-          const response = await cookRecipe(recipeId);
-
-          // Đóng loading toast
-          toast.dismiss(loadingToast);
-          loadingToast = null;
-
-          // Hiển thị thông báo thành công và chuyển trang
-          showCookSuccessMessage(response, recipeTitle, recipeId);
-        } catch (firstError) {
-          // Nếu lỗi liên quan đến userId và có userId fallback, thử lại với userId
-          const errorMsg = firstError.response?.data?.message || firstError.response?.data?.error || "";
-          const isUserIdError = errorMsg.toLowerCase().includes("userid") ||
-            errorMsg.toLowerCase().includes("user id") ||
-            errorMsg.toLowerCase().includes("đăng nhập") ||
-            errorMsg.toLowerCase().includes("authentication") ||
-            (errorMsg.toLowerCase().includes("bắt buộc") && errorMsg.toLowerCase().includes("user"));
-
-          if (isUserIdError && userIdFallback) {
-            console.log("Token không hợp lệ, thử lại với userId:", userIdFallback);
-            try {
-              const response = await cookRecipe(recipeId, userIdFallback);
-
-              // Đóng loading toast
-              toast.dismiss(loadingToast);
-              loadingToast = null;
-
-              // Hiển thị thông báo thành công và chuyển trang
-              showCookSuccessMessage(response, recipeTitle, recipeId);
-              return; // Thành công, không cần throw error
-            } catch {
-              // Nếu retry cũng fail, throw error gốc
-              throw firstError;
-            }
-          } else {
-            // Không phải lỗi userId hoặc không có userId fallback, throw error gốc
-            throw firstError;
-          }
-        }
-      }
-    } catch (err) {
-      // Đóng loading toast nếu có
-      if (loadingToast) {
-        toast.dismiss(loadingToast);
-      }
-
-      console.error("Lỗi khi nấu recipe:", err);
-      console.error("Error details:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        recipeId: recipeId,
-        recipeTitle: recipeTitle
-      });
-
-      let errorMessage = "Không thể nấu món ăn. Vui lòng thử lại.";
-
-      if (err.response) {
-        const status = err.response.status;
-        const data = err.response.data;
-
-        // Ưu tiên hiển thị message từ backend nếu có
-        const backendMessage = data?.message || data?.error || "";
-
-        if (status === 400) {
-          // Kiểm tra các loại lỗi 400 khác nhau
-          const errorMsg = backendMessage.toLowerCase();
-
-          // Kiểm tra message về userId trước (quan trọng nhất)
-          if (errorMsg.includes("userid") ||
-            errorMsg.includes("user id") ||
-            errorMsg.includes("đăng nhập") ||
-            errorMsg.includes("authentication") ||
-            (errorMsg.includes("bắt buộc") && errorMsg.includes("user"))) {
-            // Hiển thị message từ backend hoặc message mặc định
-            errorMessage = backendMessage || "Vui lòng đăng nhập hoặc cung cấp userId để nấu món ăn.";
-          } else if (errorMsg.includes("nullpointerexception") ||
-            errorMsg.includes("null pointer") ||
-            errorMsg.includes("null reference")) {
-            errorMessage = backendMessage || "Dữ liệu không hợp lệ. Có thể công thức, nguyên liệu hoặc thông tin người dùng không tồn tại. Vui lòng thử lại hoặc liên hệ hỗ trợ.";
-          } else if (errorMsg.includes("query did not return a unique result") ||
-            errorMsg.includes("2 results were returned") ||
-            errorMsg.includes("multiple results")) {
-            errorMessage = "Có nhiều nguyên liệu cùng loại trong tủ lạnh. Vui lòng kiểm tra và xóa các nguyên liệu trùng lặp trước khi nấu.";
-          } else if (errorMsg.includes("không đủ nguyên liệu") ||
-            errorMsg.includes("không có trong tủ lạnh")) {
-            errorMessage = backendMessage;
-          } else if (errorMsg.includes("recipe") || errorMsg.includes("công thức")) {
-            errorMessage = backendMessage || "Không tìm thấy công thức. Vui lòng thử lại.";
-          } else {
-            // Nếu có message từ backend, ưu tiên hiển thị nó
-            errorMessage = backendMessage || "Không đủ nguyên liệu để nấu món ăn này.";
-          }
-        } else if (status === 404) {
-          errorMessage = backendMessage || "Không tìm thấy công thức hoặc người dùng.";
-        } else if (status === 401) {
-          errorMessage = backendMessage || "Bạn cần đăng nhập để nấu món ăn.";
-        } else if (status === 500) {
-          const errorMsg = backendMessage.toLowerCase();
-          if (errorMsg.includes("nullpointerexception") ||
-            errorMsg.includes("null pointer") ||
-            errorMsg.includes("null reference")) {
-            errorMessage = backendMessage || "Lỗi server: Dữ liệu không hợp lệ. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.";
-          } else if (errorMsg.includes("query did not return a unique result")) {
-            errorMessage = "Có nhiều nguyên liệu cùng loại trong tủ lạnh. Vui lòng kiểm tra và xóa các nguyên liệu trùng lặp trước khi nấu.";
-          } else {
-            errorMessage = backendMessage || "Lỗi server: Vui lòng thử lại sau.";
-          }
-        } else {
-          errorMessage = backendMessage || `Lỗi ${status}: Không thể nấu món ăn.`;
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      toast.error(errorMessage, { autoClose: 6000 });
-    }
-  };
-
-  // Helper function để hiển thị thông báo thành công và chuyển trang
-  const showCookSuccessMessage = (response, recipeTitle, recipeId) => {
-    // Hiển thị thông báo thành công với chi tiết
-    const ingredientsList = response.deductedIngredients
-      ?.map((ing) => {
-        const status = ing.removedFromInventory ? " (đã hết)" : ` (còn lại: ${ing.remainingQuantity} ${ing.unit})`;
-        return `• ${ing.ingredientName}: -${ing.deductedQuantity} ${ing.unit}${status}`;
-      })
-      .join("\n") || "";
-
-    toast.success(
-      <div>
-        <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
-          {response.message || `Đã nấu món "${recipeTitle}" thành công!`}
-        </div>
-        {ingredientsList && (
-          <div style={{ fontSize: "12px", whiteSpace: "pre-line", textAlign: "left" }}>
-            {ingredientsList}
-          </div>
-        )}
-      </div>,
-      { autoClose: 3000 }
-    );
-
-    // Sau 1.5 giây, chuyển đến trang detail của recipe
-    setTimeout(() => {
-      navigate(`/manage/recipesdetails/${recipeId}`);
-    }, 1500);
-  };
 
   return (
     <div className="recipe-dashboard">
@@ -1412,6 +1145,8 @@ export default function RecipeDashboard() {
                 </div>
                 <p className="card-desc">{r.instructions}</p>
 
+                {/* Nút Nấu đã được chuyển vào trang DetailRecipes */}
+                
                 {/* Reminder Information */}
                 {recipesWithReminders.has(r.id) && (
                   <div style={{
@@ -1448,18 +1183,6 @@ export default function RecipeDashboard() {
                     </div>
                   </div>
                 )}
-
-                <div style={{ gap: "8px", marginTop: "12px" }}>
-                  <button
-                    className="btn-add"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCookRecipe(r.id, r.title);
-                    }}
-                    style={{ flex: 1 }}
-                  >
-                    <CookingPot size={19} className="cooking-icon" /> Nấu
-                  </button>
                   {/* <button
                     className="btn-add"
                     onClick={(e) => {
@@ -1484,7 +1207,6 @@ export default function RecipeDashboard() {
                   >
                     ✏️ Cập nhật
                   </button> */}
-                </div>
               </div>
             </div>
           ))

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -52,9 +53,9 @@ public class ReminderScheduler {
 
         // Filter out reminders created less than 1 minute ago
         LocalDateTime oneMinuteAgo = now.minusMinutes(1);
-        List<UserRecipeReminder> reminders = allReminders.stream()
+        List<UserRecipeReminder> reminders = new ArrayList<>(allReminders.stream()
                 .filter(r -> r.getCreatedAt().isBefore(oneMinuteAgo))
-                .toList();
+                .toList());
 
         if (reminders.isEmpty()) {
             return;
@@ -96,9 +97,6 @@ public class ReminderScheduler {
                     e.printStackTrace();
                 }
             }
-
-            // Clear batch from memory after processing
-            batch.clear();
 
             // Suggest garbage collection between batches (hint only)
             if (i + batchSize < reminders.size()) {

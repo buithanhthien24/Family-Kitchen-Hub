@@ -6,6 +6,8 @@ import {
   getRecipeComments,
   createRecipeComment,
   uploadCommentMedia,
+  updateRecipeComment,
+  deleteRecipeComment,
 } from "../../service/recipesApi";
 import { cookRecipe } from "../../service/recipesApi";
 import { getUsernameById } from "../../service/usersApi";
@@ -33,6 +35,15 @@ export default function RecipeDetail() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editContent, setEditContent] = useState("");
+  const [editMedia, setEditMedia] = useState([]);
+  const [editMediaToDelete, setEditMediaToDelete] = useState([]);
+  const [editNewFiles, setEditNewFiles] = useState([]);
+  const [editNewFilePreviews, setEditNewFilePreviews] = useState([]);
+  const [zoomImage, setZoomImage] = useState(null);
+  const [zoomGalleryImages, setZoomGalleryImages] = useState([]);
+  const [zoomCurrentIndex, setZoomCurrentIndex] = useState(0);
 
   const formatDateTime = (value) => {
     if (!value) return "";
@@ -560,6 +571,139 @@ export default function RecipeDetail() {
     }
   };
 
+  const handleEditComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.content);
+    setEditMedia(comment.media || []);
+    setEditMediaToDelete([]);
+    setEditNewFiles([]);
+    setEditNewFilePreviews([]);
+  };
+
+  const handleSaveEdit = async (commentId) => {
+    const userDataString = localStorage.getItem("user");
+    const userData = userDataString ? JSON.parse(userDataString) : null;
+    const userId = userData?.user?.id || userData?.id;
+
+    try {
+      // Upload new files if any
+      let newMediaUploaded = [];
+      if (editNewFiles.length > 0) {
+        try {
+          setUploadingMedia(true);
+          const uploaded = await Promise.all(
+            editNewFiles.map((file) => uploadCommentMedia(file))
+          );
+          newMediaUploaded = uploaded
+            .map((m) => (m?.url && m?.type ? { url: m.url, type: m.type } : null))
+            .filter(Boolean);
+        } finally {
+          setUploadingMedia(false);
+        }
+      }
+
+      // Filter out deleted media from existing media
+      const remainingMedia = editMedia.filter(
+        (m) => !editMediaToDelete.includes(m.id || m.url)
+      );
+
+      // Merge remaining media with newly uploaded media
+      const finalMedia = [...remainingMedia, ...newMediaUploaded];
+
+      const payload = {
+        content: editContent.trim(),
+        userId,
+        media: finalMedia,
+      };
+
+      await updateRecipeComment(commentId, payload);
+      await loadCommentsForPage(currentPage); // Reload current page
+      setEditingCommentId(null);
+      setEditContent("");
+      setEditMedia([]);
+      setEditMediaToDelete([]);
+      setEditNewFiles([]);
+      setEditNewFilePreviews([]);
+    } catch (err) {
+      console.error("Failed to update comment", err);
+      alert("Không thể cập nhật bình luận. Vui lòng thử lại.");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditContent("");
+    setEditMedia([]);
+    setEditMediaToDelete([]);
+    setEditNewFiles([]);
+    setEditNewFilePreviews([]);
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa bình luận này?")) {
+      return;
+    }
+
+    const userDataString = localStorage.getItem("user");
+    const userData = userDataString ? JSON.parse(userDataString) : null;
+    const userId = userData?.user?.id || userData?.id;
+
+    try {
+      await deleteRecipeComment(commentId, userId);
+      await loadCommentsForPage(currentPage); // Reload current page
+    } catch (err) {
+      console.error("Failed to delete comment", err);
+      alert("Không thể xóa bình luận. Vui lòng thử lại.");
+    }
+  };
+
+  // Zoom modal handlers
+  const handleImageClick = (imageUrl, allImages, currentIndex) => {
+    setZoomImage(imageUrl);
+    setZoomGalleryImages(allImages);
+    setZoomCurrentIndex(currentIndex);
+  };
+
+  const handleCloseZoom = () => {
+    setZoomImage(null);
+    setZoomGalleryImages([]);
+    setZoomCurrentIndex(0);
+  };
+
+  const handleZoomPrev = () => {
+    if (zoomCurrentIndex > 0) {
+      const newIndex = zoomCurrentIndex - 1;
+      setZoomCurrentIndex(newIndex);
+      setZoomImage(zoomGalleryImages[newIndex]);
+    }
+  };
+
+  const handleZoomNext = () => {
+    if (zoomCurrentIndex < zoomGalleryImages.length - 1) {
+      const newIndex = zoomCurrentIndex + 1;
+      setZoomCurrentIndex(newIndex);
+      setZoomImage(zoomGalleryImages[newIndex]);
+    }
+  };
+
+  // Keyboard navigation for zoom modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!zoomImage) return;
+
+      if (e.key === "Escape") {
+        handleCloseZoom();
+      } else if (e.key === "ArrowLeft") {
+        handleZoomPrev();
+      } else if (e.key === "ArrowRight") {
+        handleZoomNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zoomImage, zoomCurrentIndex, zoomGalleryImages]);
+
   // Load similar recipes – 7.2 Đề xuất món tương tự
   useEffect(() => {
     if (!id) return;
@@ -772,100 +916,269 @@ export default function RecipeDetail() {
           ) : comments.length === 0 ? (
             <p>Chưa có bình luận nào. Hãy là người đầu tiên!</p>
           ) : (
-            comments.map((c) => (
-              <div key={c.id} className="comment-item">
-                <div className="comment-avatar">
-                  <span>
-                    {getUserInitial(c.userName, c.userId)}
-                  </span>
-                </div>
-                <div className="comment-body">
-                  <div className="comment-header">
-                    <div className="comment-meta-left">
-                      <span className="comment-author">
-                        {c.userName ||
-                          (typeof usernames[c.userId] === 'string' ? usernames[c.userId] : null) ||
-                          `User #${c.userId || ""}`}
-                      </span>
-                      {c.createdAt && (
-                        <span className="comment-date">
-                          {formatDateTime(c.createdAt)}
+            comments.map((c) => {
+              const userDataString = localStorage.getItem("user");
+              const userData = userDataString ? JSON.parse(userDataString) : null;
+              const currentUserId = userData?.user?.id || userData?.id;
+              const isOwner = currentUserId && c.userId && Number(currentUserId) === Number(c.userId);
+
+              return (
+                <div key={c.id} className="comment-item">
+                  <div className="comment-avatar">
+                    <span>
+                      {getUserInitial(c.userName, c.userId)}
+                    </span>
+                  </div>
+                  <div className="comment-body">
+                    <div className="comment-header">
+                      <div className="comment-meta-left">
+                        <span className="comment-author">
+                          {c.userName ||
+                            (typeof usernames[c.userId] === 'string' ? usernames[c.userId] : null) ||
+                            `User #${c.userId || ""}`}
                         </span>
+                        {c.createdAt && (
+                          <span className="comment-date">
+                            {formatDateTime(c.createdAt)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action buttons in top right - SVG icons */}
+                      {isOwner && !editingCommentId && (
+                        <div className="comment-actions-topright">
+                          <button
+                            className="btn-icon btn-edit-icon"
+                            onClick={() => handleEditComment(c)}
+                            title="Sửa"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path>
+                              <path d="M15 5l4 4"></path>
+                            </svg>
+                          </button>
+                          <button
+                            className="btn-icon btn-delete-icon"
+                            onClick={() => handleDeleteComment(c.id)}
+                            title="Xóa"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18"></path>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <path d="M10 11v6"></path>
+                              <path d="M14 11v6"></path>
+                            </svg>
+                          </button>
+                        </div>
                       )}
                     </div>
-                  </div>
-                  <p className="comment-content">{c.content}</p>
 
-                  {Array.isArray(c.media) && c.media.length > 0 && (
-                    <div className="comment-media-list">
-                      {c.media.map((m) => (
-                        <div key={m.id || m.url} className="comment-media-thumb">
-                          {m.type?.startsWith("video") ? (
-                            <video src={m.url} controls />
-                          ) : (
-                            <img src={m.url} alt="" />
+                    {/* Edit mode or display mode */}
+                    {editingCommentId === c.id ? (
+                      <div className="comment-edit-mode">
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          rows={3}
+                          className="edit-textarea"
+                        />
+
+                        {/* Existing Media Management */}
+                        {editMedia.length > 0 && (
+                          <div className="edit-existing-media">
+                            <h4 className="edit-media-label">Ảnh hiện tại:</h4>
+                            <div className="edit-media-grid">
+                              {editMedia
+                                .filter((m) => !editMediaToDelete.includes(m.id || m.url))
+                                .map((m) => (
+                                  <div key={m.id || m.url} className="edit-media-item">
+                                    {m.type?.startsWith("video") ? (
+                                      <video src={convertMediaUrl(m.url)} />
+                                    ) : (
+                                      <img src={convertMediaUrl(m.url)} alt="" />
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="btn-remove-media"
+                                      onClick={() => {
+                                        setEditMediaToDelete([...editMediaToDelete, m.id || m.url]);
+                                      }}
+                                      title="Xóa ảnh này"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* New Media Upload */}
+                        <div className="edit-new-media">
+                          <label className="edit-upload-label">
+                            <span>📎 Thêm ảnh/video mới</span>
+                            <input
+                              type="file"
+                              accept="image/*,video/*"
+                              multiple
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setEditNewFiles([...editNewFiles, ...files]);
+                                setEditNewFilePreviews([
+                                  ...editNewFilePreviews,
+                                  ...files.map((file) => ({
+                                    name: file.name,
+                                    type: file.type,
+                                    url: URL.createObjectURL(file),
+                                  })),
+                                ]);
+                              }}
+                            />
+                          </label>
+
+                          {/* Preview new files */}
+                          {editNewFilePreviews.length > 0 && (
+                            <div className="edit-new-preview">
+                              <h4 className="edit-media-label">Ảnh mới sẽ được thêm:</h4>
+                              <div className="edit-media-grid">
+                                {editNewFilePreviews.map((preview, idx) => (
+                                  <div key={idx} className="edit-media-item">
+                                    {preview.type.startsWith("image") ? (
+                                      <img src={preview.url} alt={preview.name} />
+                                    ) : (
+                                      <video src={preview.url} />
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="btn-remove-media"
+                                      onClick={() => {
+                                        const newFiles = [...editNewFiles];
+                                        const newPreviews = [...editNewFilePreviews];
+                                        newFiles.splice(idx, 1);
+                                        newPreviews.splice(idx, 1);
+                                        setEditNewFiles(newFiles);
+                                        setEditNewFilePreviews(newPreviews);
+                                      }}
+                                      title="Xóa ảnh này"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+
+                        <div className="edit-actions">
+                          <button
+                            className="btn-save"
+                            onClick={() => handleSaveEdit(c.id)}
+                            disabled={!editContent.trim() || uploadingMedia}
+                          >
+                            {uploadingMedia ? "⏳ Đang tải..." : "💾 Lưu"}
+                          </button>
+                          <button
+                            className="btn-cancel"
+                            onClick={handleCancelEdit}
+                          >
+                            ✖ Hủy
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="comment-content">{c.content}</p>
+                    )}
+
+                    {/* Media thumbnails - clickable for zoom */}
+                    {!editingCommentId && Array.isArray(c.media) && c.media.length > 0 && (
+                      <div className="comment-media-list">
+                        {c.media.map((m, idx) => (
+                          <div
+                            key={m.id || m.url}
+                            className="comment-media-thumb"
+                            onClick={() => {
+                              if (!m.type?.startsWith("video")) {
+                                const allImages = c.media
+                                  .filter((media) => !media.type?.startsWith("video"))
+                                  .map((media) => convertMediaUrl(media.url));
+                                const imageIndex = c.media
+                                  .filter((media) => !media.type?.startsWith("video"))
+                                  .findIndex((media) => media.id === m.id || media.url === m.url);
+                                handleImageClick(convertMediaUrl(m.url), allImages, imageIndex);
+                              }
+                            }}
+                            style={{ cursor: m.type?.startsWith("video") ? "default" : "pointer" }}
+                          >
+                            {m.type?.startsWith("video") ? (
+                              <video src={convertMediaUrl(m.url)} controls />
+                            ) : (
+                              <img src={convertMediaUrl(m.url)} alt="" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
-          {/* Pagination */}
-          {comments.length > 0 && totalPages > 1 && (
-            <div className="comment-pagination">
-              <button
-                onClick={() => loadCommentsForPage(currentPage - 1)}
-                disabled={currentPage === 0 || loadingComments}
-                className="pagination-btn pagination-nav"
-                aria-label="Previous page"
-              >
-                &lt;
-              </button>
 
-              {getPageNumbers().map((pageNum, index) => {
-                const pageNumbers = getPageNumbers();
-                const showEllipsisBefore = index === 0 && pageNum > 0;
-                const showEllipsisAfter =
-                  index === pageNumbers.length - 1 &&
-                  pageNum < totalPages - 1 &&
-                  hasMorePages;
-
-                return (
-                  <React.Fragment key={pageNum}>
-                    {showEllipsisBefore && (
-                      <span className="pagination-ellipsis">...</span>
-                    )}
-                    <button
-                      onClick={() => loadCommentsForPage(pageNum)}
-                      disabled={loadingComments}
-                      className={`pagination-btn pagination-number ${currentPage === pageNum ? "active" : ""
-                        }`}
-                    >
-                      {pageNum + 1}
-                    </button>
-                    {showEllipsisAfter && (
-                      <span className="pagination-ellipsis">...</span>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-
+          {/* Simple Load More Pagination */}
+          {hasMorePages && (
+            <div className="comment-load-more">
               <button
                 onClick={() => loadCommentsForPage(currentPage + 1)}
-                disabled={!hasMorePages || loadingComments}
-                className="pagination-btn pagination-nav"
-                aria-label="Next page"
+                disabled={loadingComments}
+                className="btn-load-more"
               >
-                &gt;
+                {loadingComments ? "Đang tải..." : "Tải thêm bình luận"}
               </button>
+              <span className="page-info">Trang {currentPage + 1} / {totalPages}</span>
             </div>
           )}
         </div>
       </div>
+
+      {/* Zoom Modal */}
+      {zoomImage && (
+        <div className="zoom-modal-overlay" onClick={handleCloseZoom}>
+          <button className="zoom-close-btn" onClick={handleCloseZoom} title="Đóng (ESC)">
+            ✕
+          </button>
+
+          <div className="zoom-modal-content" onClick={(e) => e.stopPropagation()}>
+            <img src={zoomImage} alt="Zoomed" className="zoom-image" />
+
+            {zoomGalleryImages.length > 1 && (
+              <>
+                <button
+                  className="zoom-nav-btn zoom-prev-btn"
+                  onClick={handleZoomPrev}
+                  disabled={zoomCurrentIndex === 0}
+                  title="Ảnh trước (←)"
+                >
+                  ‹
+                </button>
+                <button
+                  className="zoom-nav-btn zoom-next-btn"
+                  onClick={handleZoomNext}
+                  disabled={zoomCurrentIndex === zoomGalleryImages.length - 1}
+                  title="Ảnh sau (→)"
+                >
+                  ›
+                </button>
+                <div className="zoom-counter">
+                  {zoomCurrentIndex + 1} / {zoomGalleryImages.length}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

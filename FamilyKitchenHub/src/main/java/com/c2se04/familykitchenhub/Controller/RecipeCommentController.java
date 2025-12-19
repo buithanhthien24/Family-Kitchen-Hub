@@ -23,20 +23,32 @@ public class RecipeCommentController {
 
     @PostMapping("/{recipeId}/comments")
     public ResponseEntity<RecipeCommentResponseDTO> createComment(@PathVariable Long recipeId,
-                                                                  @RequestBody RecipeCommentRequestDTO request) {
+            @RequestBody RecipeCommentRequestDTO request) {
         return ResponseEntity.ok(recipeCommentService.createComment(recipeId, request));
     }
 
     @GetMapping("/{recipeId}/comments")
     public ResponseEntity<List<RecipeCommentResponseDTO>> listComments(@PathVariable Long recipeId,
-                                                                       @RequestParam(required = false) CommentStatus status) {
+            @RequestParam(required = false) CommentStatus status) {
         return ResponseEntity.ok(recipeCommentService.getComments(recipeId, status));
     }
 
     @PatchMapping("/comments/{commentId}/status")
     public ResponseEntity<RecipeCommentResponseDTO> updateStatus(@PathVariable Long commentId,
-                                                                 @RequestParam CommentStatus status) {
+            @RequestParam CommentStatus status) {
         return ResponseEntity.ok(recipeCommentService.updateStatus(commentId, status));
     }
-}
 
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<RecipeCommentResponseDTO> updateComment(@PathVariable Long commentId,
+            @RequestBody RecipeCommentRequestDTO request) {
+        return ResponseEntity.ok(recipeCommentService.updateComment(commentId, request));
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId,
+            @RequestParam Long userId) {
+        recipeCommentService.deleteComment(commentId, userId);
+        return ResponseEntity.noContent().build();
+    }
+}

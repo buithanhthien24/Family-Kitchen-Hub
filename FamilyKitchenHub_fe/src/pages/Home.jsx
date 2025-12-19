@@ -8,7 +8,7 @@ import {
   BookOpen,
   HeartPulse,
   Apple,
-  ShoppingCart,   
+  ShoppingCart,
   MessageCircle,
   Sparkles,
   ChevronLeft,
@@ -79,47 +79,28 @@ function Home() {
       const data = await getTopBookmarkedRecipes(5);
       const bookmarkedData = data || [];
 
+      // Map RecipePopularityResponseDTO fields to match expected format
+      const mappedRecipes = bookmarkedData.map(recipe => ({
+        id: recipe.recipeId,              // Map recipeId -> id
+        title: recipe.recipeTitle,         // Map recipeTitle -> title
+        imageUrl: recipe.imageUrl,
+        bookmarkCount: recipe.bookmarkCount,
+        cookingTimeMinutes: recipe.cookingTimeMinutes,
+        servings: recipe.servings,
+        popularityScore: recipe.popularityScore,
+        searchCount: recipe.searchCount
+      }));
+
       // Filter out recipes without valid IDs
-      const validBookmarked = bookmarkedData.filter(recipe => {
-        const id = recipe.id || recipe.recipeId;
-        if (!id) {
+      const validBookmarked = mappedRecipes.filter(recipe => {
+        if (!recipe.id) {
           console.warn("Bookmarked recipe without ID:", recipe);
           return false;
         }
         return true;
       });
 
-      // Fetch full recipe details for each bookmarked recipe
-      const recipesWithDetails = await Promise.all(
-        validBookmarked.map(async (recipe) => {
-          const recipeId = recipe.id || recipe.recipeId;
-          try {
-            // If recipe already has all needed fields, use it
-            if (recipe.title && recipe.imageUrl && recipe.cookingTimeMinutes !== undefined) {
-              return recipe;
-            }
-
-            // Otherwise, fetch full details
-            const fullRecipe = await getRecipeById(recipeId);
-            return {
-              ...fullRecipe,
-              bookmarkCount: recipe.bookmarkCount || fullRecipe.bookmarkCount || 0,
-              id: recipeId
-            };
-          } catch (error) {
-            console.error(`Error fetching recipe ${recipeId} details:`, error);
-            // Return original recipe if fetch fails
-            return recipe;
-          }
-        })
-      );
-
-      // Debug: Log first recipe to check structure
-      if (recipesWithDetails.length > 0) {
-        console.log("Sample bookmarked recipe structure:", recipesWithDetails[0]);
-      }
-
-      setTopBookmarked(recipesWithDetails);
+      setTopBookmarked(validBookmarked);
     } catch (error) {
       console.error("Error fetching top bookmarked recipes:", error);
     } finally {

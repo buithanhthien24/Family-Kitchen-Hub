@@ -57,6 +57,12 @@ export default function TagsPage() {
     };
 
     const handleSaveEdit = async (id) => {
+        // Validate required field
+        if (!editForm.name || !editForm.name.trim()) {
+            toast.error('Please enter a tag name');
+            return;
+        }
+
         try {
             await updateTag(id, editForm);
             toast.success('Tag updated successfully!');
@@ -100,6 +106,12 @@ export default function TagsPage() {
     };
 
     const handleSaveNew = async () => {
+        // Validate required field
+        if (!newTag.name || !newTag.name.trim()) {
+            toast.error('Please enter a tag name');
+            return;
+        }
+
         try {
             await createTag(newTag);
             toast.success('Tag created successfully!');

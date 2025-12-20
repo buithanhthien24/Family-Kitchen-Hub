@@ -53,6 +53,12 @@ export default function CategoriesPage() {
     };
 
     const handleSaveEdit = async (id) => {
+        // Validate required field
+        if (!editForm.name || !editForm.name.trim()) {
+            toast.error('Please enter a category name');
+            return;
+        }
+
         try {
             await updateCategory(id, editForm);
             toast.success('Category updated successfully!');
@@ -94,6 +100,12 @@ export default function CategoriesPage() {
     };
 
     const handleSaveNew = async () => {
+        // Validate required field
+        if (!newCategory.name || !newCategory.name.trim()) {
+            toast.error('Please enter a category name');
+            return;
+        }
+
         try {
             await createCategory(newCategory);
             toast.success('Category created successfully!');

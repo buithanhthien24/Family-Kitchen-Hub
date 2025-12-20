@@ -83,11 +83,13 @@ public class UserController {
 
     // 4. UPDATE USER (Chỉ update thông tin tài khoản: Email, FullName)
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id, @RequestBody UserRequestDTO userDTO) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id,
+            @RequestBody UserRequestDTO userDTO) {
         User updateDetails = new User();
         updateDetails.setFullName(userDTO.getFullName());
         updateDetails.setEmail(userDTO.getEmail());
         updateDetails.setCountry(userDTO.getCountry());
+        // Role update via this endpoint is removed/ignored
 
         // Không cho phép update username/password tại endpoint này
         User updatedUser = userService.updateUser(id, updateDetails);

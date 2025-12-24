@@ -35,3 +35,22 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Sensitive Configuration Files ###
+# DO NOT COMMIT - Contains local credentials
+**/application-local.properties
+**/application-dev.properties
+.env
+.env.local
+.env.*.local
+
+### Media & Uploads ###
+# User uploaded files should not be in git
+uploads/
+media/
+*.log
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+

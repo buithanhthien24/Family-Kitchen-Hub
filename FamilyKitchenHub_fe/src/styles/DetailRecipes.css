@@ -464,7 +464,7 @@
 
 .comment-form textarea {
 
- 
+
 
   resize: vertical;
   min-height: 80px;
@@ -561,8 +561,8 @@
 }
 
 .comment-media-thumb {
-  width: 80px;
-  height: 80px;
+  width: 150px;
+  height: 150px;
   border-radius: 12px;
   overflow: hidden;
   background-color: #e5e7eb;
@@ -571,6 +571,7 @@
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease;
+  cursor: pointer;
 }
 
 .comment-media-thumb:hover {
@@ -615,7 +616,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .comment-meta-left {
@@ -637,10 +638,11 @@
 }
 
 .comment-content {
-  font-size: 15px;
+  font-size: 17px;
   color: #374151;
   line-height: 1.7;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  margin-top: 8px;
 }
 
 /* Comment Avatar */
@@ -925,5 +927,503 @@
 
   .similar-card img {
     height: 200px;
+  }
+}
+
+/* =========================
+   COMMENT EDIT/DELETE BUTTONS
+========================= */
+
+/* Comment Action Buttons - Top Right Icon Only */
+.comment-actions-topright {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-edit-icon {
+  background: #fef3f2;
+  color: #374151;
+}
+
+.btn-edit-icon:hover {
+  background: #fde8e7;
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.btn-delete-icon {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.btn-delete-icon:hover {
+  background: #fee2e2;
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Old action buttons (kept for compatibility) */
+.comment-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+.btn-edit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.btn-delete:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+/* Edit Mode Styles */
+.comment-edit-mode {
+  margin-top: 12px;
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #111827;
+  background-color: #fafafa;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.edit-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background-color: #ffffff;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-save,
+.btn-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-cancel {
+  background: #e5e7eb;
+  color: #374151;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-cancel:hover {
+  background: #d1d5db;
+  transform: translateY(-1px);
+}
+
+/* Load More Pagination */
+.comment-load-more {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-load-more {
+  padding: 12px 32px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.btn-load-more:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #ffffff;
+  border-color: #f97316;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* =========================
+   EDIT MODE PICTURE MANAGEMENT
+========================= */
+
+.edit-existing-media,
+.edit-new-media {
+  margin-top: 16px;
+}
+
+.edit-media-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.edit-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.edit-media-item {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #f3f4f6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.edit-media-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.edit-media-item img,
+.edit-media-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-media {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.95);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.btn-remove-media:hover {
+  background: rgba(220, 38, 38, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+}
+
+.edit-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.edit-upload-label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+.edit-upload-label input {
+  display: none;
+}
+
+.edit-new-preview {
+  margin-top: 12px;
+}
+
+/* =========================
+   ZOOM MODAL
+========================= */
+
+.zoom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.zoom-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.zoom-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.zoom-close-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+}
+
+.zoom-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.zoom-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 48px;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.zoom-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.zoom-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.zoom-prev-btn {
+  left: -70px;
+}
+
+.zoom-next-btn {
+  right: -70px;
+}
+
+.zoom-counter {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
+
+/* Responsive zoom modal */
+@media (max-width: 768px) {
+  .zoom-nav-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 36px;
+  }
+
+  .zoom-prev-btn {
+    left: 10px;
+  }
+
+  .zoom-next-btn {
+    right: 10px;
+  }
+
+  .zoom-close-btn {
+    top: 10px;
+    right: 10px;
+  }
+
+  .zoom-counter {
+    bottom: 10px;
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .zoom-image {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .edit-media-item {
+    height: 100px;
+  }
+
+  .zoom-nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
   }
 }

@@ -119,6 +119,68 @@
     display: block;
 }
 
+/* Scrollbar Styling */
+.data-table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.data-table-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.data-table-wrapper::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.data-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Icon Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-edit-icon {
+    background: #fef3f2;
+    color: #374151;
+}
+
+.btn-edit-icon:hover {
+    background: #fde8e7;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.btn-delete-icon {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.btn-delete-icon:hover {
+    background: #fee2e2;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+}
+
 .no-image {
     display: inline-block;
     width: 60px;

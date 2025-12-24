@@ -3,6 +3,7 @@ import { getAllRecipes, createRecipe, updateRecipe, deleteRecipe, getRecipeCateg
 import { getAllCategories } from '../../service/categoryService';
 import { getAllIngredients } from '../../service/ingredientService';
 import { toast } from 'react-toastify';
+import axios from '../../hooks/axios';
 import './RecipesPage.css';
 import './RecipesPageExpandable.css';
 
@@ -16,8 +17,9 @@ export default function RecipesPage() {
         cookingTimeMinutes: '',
         servings: '',
         totalCalories: '',
-        difficultyLevel: 'EASY',
-        mealType: 'BREAKFAST'
+        difficultyLevel: 'Easy',
+        mealType: 'BREAKFAST',
+        imageUrl: ''
     });
     const [newRecipe, setNewRecipe] = useState({
         title: '',
@@ -25,8 +27,9 @@ export default function RecipesPage() {
         cookingTimeMinutes: '',
         servings: '',
         totalCalories: '',
-        difficultyLevel: 'EASY',
-        mealType: 'BREAKFAST'
+        difficultyLevel: 'Easy',
+        mealType: 'BREAKFAST',
+        imageUrl: ''
     });
     const [showAddRow, setShowAddRow] = useState(false);
     const [expandedId, setExpandedId] = useState(null);
@@ -48,6 +51,7 @@ export default function RecipesPage() {
         quantity: '',
         unit: ''
     });
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     useEffect(() => {
         fetchRecipes();
@@ -68,6 +72,61 @@ export default function RecipesPage() {
         }
     };
 
+    const handleImageUpload = async (file, isEdit = false) => {
+        if (!file) return;
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            toast.error('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            toast.error('Image size must be less than 5MB');
+            return;
+        }
+
+        try {
+            setUploadingImage(true);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', 'IMAGE');
+
+            const response = await axios.post('/media/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            let imageUrl = response.data.url;
+
+            // If URL is relative, make it absolute
+            if (imageUrl && imageUrl.startsWith('/')) {
+                // Get the base URL from axios config and remove /api suffix
+                let baseURL = axios.defaults.baseURL || 'http://localhost:8080';
+                // Remove /api from the end if present
+                baseURL = baseURL.replace(/\/api$/, '');
+                imageUrl = baseURL + imageUrl;
+            }
+
+            if (isEdit) {
+                setEditForm(prev => ({ ...prev, imageUrl }));
+            } else {
+                setNewRecipe(prev => ({ ...prev, imageUrl }));
+            }
+
+            toast.success('Image uploaded successfully!');
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Failed to upload image');
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
     const handleEdit = (recipe) => {
         setEditingId(recipe.id);
         setEditForm({
@@ -76,8 +135,9 @@ export default function RecipesPage() {
             cookingTimeMinutes: recipe.cookingTimeMinutes || '',
             servings: recipe.servings || '',
             totalCalories: recipe.totalCalories || '',
-            difficultyLevel: recipe.difficultyLevel || 'EASY',
-            mealType: recipe.mealType || 'BREAKFAST'
+            difficultyLevel: recipe.difficultyLevel || 'Easy',
+            mealType: recipe.mealType || 'BREAKFAST',
+            imageUrl: recipe.imageUrl || ''
         });
     };
 
@@ -90,11 +150,38 @@ export default function RecipesPage() {
             servings: '',
             totalCalories: '',
             difficultyLevel: 'EASY',
-            mealType: 'BREAKFAST'
+            mealType: 'BREAKFAST',
+            imageUrl: ''
         });
     };
 
     const handleSaveEdit = async (id) => {
+        // Validate required fields
+        if (!editForm.title || !editForm.title.trim()) {
+            toast.error('Please enter a recipe title');
+            return;
+        }
+        if (!editForm.description || !editForm.description.trim()) {
+            toast.error('Please enter a description');
+            return;
+        }
+        if (!editForm.cookingTimeMinutes) {
+            toast.error('Please enter cooking time');
+            return;
+        }
+        if (!editForm.servings) {
+            toast.error('Please enter number of servings');
+            return;
+        }
+        if (!editForm.totalCalories) {
+            toast.error('Please enter total calories');
+            return;
+        }
+        if (!editForm.imageUrl || !editForm.imageUrl.trim()) {
+            toast.error('Please provide an image URL or upload an image');
+            return;
+        }
+
         try {
             const dataToSave = {
                 ...editForm,
@@ -130,11 +217,10 @@ export default function RecipesPage() {
         setNewRecipe({
             title: '',
             description: '',
-            instructions: '',
             cookingTimeMinutes: '',
             servings: '',
             totalCalories: '',
-            difficultyLevel: 'EASY',
+            difficultyLevel: 'Easy',
             mealType: 'BREAKFAST',
             imageUrl: ''
         });
@@ -149,11 +235,38 @@ export default function RecipesPage() {
             servings: '',
             totalCalories: '',
             difficultyLevel: 'EASY',
-            mealType: 'BREAKFAST'
+            mealType: 'BREAKFAST',
+            imageUrl: ''
         });
     };
 
     const handleSaveNew = async () => {
+        // Validate required fields
+        if (!newRecipe.title || !newRecipe.title.trim()) {
+            toast.error('Please enter a recipe title');
+            return;
+        }
+        if (!newRecipe.description || !newRecipe.description.trim()) {
+            toast.error('Please enter a description');
+            return;
+        }
+        if (!newRecipe.cookingTimeMinutes) {
+            toast.error('Please enter cooking time');
+            return;
+        }
+        if (!newRecipe.servings) {
+            toast.error('Please enter number of servings');
+            return;
+        }
+        if (!newRecipe.totalCalories) {
+            toast.error('Please enter total calories');
+            return;
+        }
+        if (!newRecipe.imageUrl || !newRecipe.imageUrl.trim()) {
+            toast.error('Please provide an image URL or upload an image');
+            return;
+        }
+
         try {
             const dataToSave = {
                 ...newRecipe,
@@ -170,8 +283,9 @@ export default function RecipesPage() {
                 cookingTimeMinutes: '',
                 servings: '',
                 totalCalories: '',
-                difficultyLevel: 'EASY',
-                mealType: 'BREAKFAST'
+                difficultyLevel: 'Easy',
+                mealType: 'BREAKFAST',
+                imageUrl: ''
             });
             fetchRecipes();
         } catch (error) {
@@ -375,7 +489,7 @@ export default function RecipesPage() {
     return (
         <div className="recipes-page">
             <div className="page-header">
-                <h2>Recipes Management</h2>
+                <h2>Recipes</h2>
                 <button className="btn-primary" onClick={handleAddNew}>
                     + Add New Recipe
                 </button>
@@ -386,6 +500,7 @@ export default function RecipesPage() {
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Image</th>
                             <th>Title</th>
                             <th>Description</th>
                             <th>Cooking Time</th>
@@ -402,13 +517,43 @@ export default function RecipesPage() {
                             <tr className="editing-row">
                                 <td>-</td>
                                 <td>
+                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            className="inline-input"
+                                            value={newRecipe.imageUrl}
+                                            onChange={(e) => setNewRecipe({ ...newRecipe, imageUrl: e.target.value })}
+                                            placeholder="Image URL or upload file"
+                                            style={{ flex: 1 }}
+                                        />
+                                        <label style={{
+                                            padding: '4px 8px',
+                                            background: '#4CAF50',
+                                            color: 'white',
+                                            borderRadius: '4px',
+                                            cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                                            fontSize: '12px',
+                                            whiteSpace: 'nowrap',
+                                            opacity: uploadingImage ? 0.6 : 1
+                                        }}>
+                                            {uploadingImage ? '⏳' : '📁 Upload'}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleImageUpload(e.target.files[0], false)}
+                                                style={{ display: 'none' }}
+                                                disabled={uploadingImage}
+                                            />
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
                                     <input
                                         type="text"
                                         className="inline-input"
                                         value={newRecipe.title}
                                         onChange={(e) => setNewRecipe({ ...newRecipe, title: e.target.value })}
                                         placeholder="Recipe title"
-                                        autoFocus
                                     />
                                 </td>
                                 <td>
@@ -453,9 +598,9 @@ export default function RecipesPage() {
                                         value={newRecipe.difficultyLevel}
                                         onChange={(e) => setNewRecipe({ ...newRecipe, difficultyLevel: e.target.value })}
                                     >
-                                        <option value="EASY">EASY</option>
-                                        <option value="MEDIUM">MEDIUM</option>
-                                        <option value="HARD">HARD</option>
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
                                     </select>
                                 </td>
                                 <td>
@@ -467,7 +612,6 @@ export default function RecipesPage() {
                                         <option value="BREAKFAST">BREAKFAST</option>
                                         <option value="LUNCH">LUNCH</option>
                                         <option value="DINNER">DINNER</option>
-                                        <option value="SNACK">SNACK</option>
                                     </select>
                                 </td>
                                 <td>
@@ -484,7 +628,7 @@ export default function RecipesPage() {
                         {/* Existing Recipes */}
                         {recipes.length === 0 ? (
                             <tr>
-                                <td colSpan="9" className="no-data">No recipes found</td>
+                                <td colSpan="10" className="no-data">No recipes found</td>
                             </tr>
                         ) : (
                             recipes.map(recipe => (
@@ -492,6 +636,37 @@ export default function RecipesPage() {
                                     // Editing Row
                                     <tr key={recipe.id} className="editing-row">
                                         <td>{recipe.id}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                <input
+                                                    type="text"
+                                                    className="inline-input"
+                                                    value={editForm.imageUrl}
+                                                    onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
+                                                    placeholder="Image URL or upload file"
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <label style={{
+                                                    padding: '4px 8px',
+                                                    background: '#4CAF50',
+                                                    color: 'white',
+                                                    borderRadius: '4px',
+                                                    cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                                                    fontSize: '12px',
+                                                    whiteSpace: 'nowrap',
+                                                    opacity: uploadingImage ? 0.6 : 1
+                                                }}>
+                                                    {uploadingImage ? '⏳' : '📁 Upload'}
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleImageUpload(e.target.files[0], true)}
+                                                        style={{ display: 'none' }}
+                                                        disabled={uploadingImage}
+                                                    />
+                                                </label>
+                                            </div>
+                                        </td>
                                         <td>
                                             <input
                                                 type="text"
@@ -538,9 +713,9 @@ export default function RecipesPage() {
                                                 value={editForm.difficultyLevel}
                                                 onChange={(e) => setEditForm({ ...editForm, difficultyLevel: e.target.value })}
                                             >
-                                                <option value="EASY">EASY</option>
-                                                <option value="MEDIUM">MEDIUM</option>
-                                                <option value="HARD">HARD</option>
+                                                <option value="Easy">Easy</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="Hard">Hard</option>
                                             </select>
                                         </td>
                                         <td>
@@ -552,7 +727,6 @@ export default function RecipesPage() {
                                                 <option value="BREAKFAST">BREAKFAST</option>
                                                 <option value="LUNCH">LUNCH</option>
                                                 <option value="DINNER">DINNER</option>
-                                                <option value="SNACK">SNACK</option>
                                             </select>
                                         </td>
                                         <td>
@@ -569,6 +743,17 @@ export default function RecipesPage() {
                                         {/* Display Row */}
                                         <tr key={recipe.id}>
                                             <td>{recipe.id}</td>
+                                            <td>
+                                                {recipe.imageUrl ? (
+                                                    <img
+                                                        src={recipe.imageUrl}
+                                                        alt={recipe.title}
+                                                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
+                                                    />
+                                                ) : (
+                                                    <span style={{ color: '#999' }}>No image</span>
+                                                )}
+                                            </td>
                                             <td>{recipe.title}</td>
                                             <td className="text-cell">{recipe.description || '-'}</td>
                                             <td>{recipe.cookingTimeMinutes ? `${recipe.cookingTimeMinutes} min` : '-'}</td>
@@ -585,19 +770,40 @@ export default function RecipesPage() {
                                                 </span>
                                             </td>
                                             <td>
-                                                <button className="btn-edit" onClick={() => handleEdit(recipe)}>
-                                                    ✏️
-                                                </button>
-                                                <button className="btn-delete" onClick={() => handleDelete(recipe.id)}>
-                                                    🗑️
-                                                </button>
-                                                <button
-                                                    className="btn-expand"
-                                                    onClick={() => handleToggleExpand(recipe.id)}
-                                                    title="Manage Details"
-                                                >
-                                                    {expandedId === recipe.id ? '▲' : '▼'}
-                                                </button>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        type="button"
+                                                        className="btn-icon btn-edit-icon"
+                                                        onClick={() => handleEdit(recipe)}
+                                                        title="Sửa"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path>
+                                                            <path d="M15 5l4 4"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn-icon btn-delete-icon"
+                                                        onClick={() => handleDelete(recipe.id)}
+                                                        title="Xóa"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M3 6h18"></path>
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                            <path d="M10 11v6"></path>
+                                                            <path d="M14 11v6"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        className="btn-expand"
+                                                        onClick={() => handleToggleExpand(recipe.id)}
+                                                        title="Manage Details"
+                                                    >
+                                                        {expandedId === recipe.id ? '▲' : '▼'}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
 
@@ -606,7 +812,7 @@ export default function RecipesPage() {
                                             <React.Fragment key={`expand-${recipe.id}`}>
                                                 {/* Categories Sub-Row */}
                                                 <tr className="sub-row categories-row">
-                                                    <td colSpan="9">
+                                                    <td colSpan="10">
                                                         <div className="sub-content">
                                                             <strong>📁 Categories:</strong>
                                                             {subLoading ? (
@@ -652,7 +858,7 @@ export default function RecipesPage() {
 
                                                 {/* Steps Sub-Row */}
                                                 <tr className="sub-row steps-row">
-                                                    <td colSpan="9">
+                                                    <td colSpan="10">
                                                         <div className="sub-content">
                                                             <strong>📝 Steps:</strong>
                                                             <div className="steps-crud">
@@ -750,7 +956,7 @@ export default function RecipesPage() {
 
                                                 {/* Ingredients Sub-Row */}
                                                 <tr className="sub-row ingredients-row">
-                                                    <td colSpan="9">
+                                                    <td colSpan="10">
                                                         <div className="sub-content">
                                                             <strong>🥕 Ingredients:</strong>
                                                             <div className="ingredients-crud">

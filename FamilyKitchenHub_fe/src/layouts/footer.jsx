@@ -93,8 +93,8 @@ export default function Footer() {
 
       {/* Bottom */}
       <div className="footer-bottom">
-        
-        <p>© 2024 Family Menu Manager. All rights reserved.</p>
+
+        <p>© 2025 Family Menu Manager. All rights reserved.</p>
         <div className="footer-tags">
           <span className="tag">SOC 2 Compliant</span>
           <span className="tag">GDPR Ready</span>

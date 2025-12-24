@@ -8,6 +8,8 @@ public class RecipePopularityResponseDTO {
     private double popularityScore;
     private long searchCount;
     private long bookmarkCount;
+    private Integer cookingTimeMinutes;
+    private Integer servings;
 
     public Long getRecipeId() {
         return recipeId;
@@ -55,5 +57,21 @@ public class RecipePopularityResponseDTO {
 
     public void setBookmarkCount(long bookmarkCount) {
         this.bookmarkCount = bookmarkCount;
+    }
+
+    public Integer getCookingTimeMinutes() {
+        return cookingTimeMinutes;
+    }
+
+    public void setCookingTimeMinutes(Integer cookingTimeMinutes) {
+        this.cookingTimeMinutes = cookingTimeMinutes;
+    }
+
+    public Integer getServings() {
+        return servings;
+    }
+
+    public void setServings(Integer servings) {
+        this.servings = servings;
     }
 }

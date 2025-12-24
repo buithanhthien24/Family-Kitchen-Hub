@@ -1,13 +1,17 @@
 package com.c2se04.familykitchenhub.DTO;
 
+import com.c2se04.familykitchenhub.enums.DifficultyLevel;
 import com.c2se04.familykitchenhub.enums.MealType;
 import java.util.Set;
 
 public class RecipeRequestDTO {
     private String title;
+    private String description;
     private String instructions;
     private Integer cookingTimeMinutes;
     private Integer servings;
+    private Integer totalCalories;
+    private DifficultyLevel difficultyLevel;
     private String imageUrl;
     private MealType mealType;
     private Set<RecipeIngredientDTO> ingredients;
@@ -69,5 +73,29 @@ public class RecipeRequestDTO {
 
     public void setMealType(MealType mealType) {
         this.mealType = mealType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getTotalCalories() {
+        return totalCalories;
+    }
+
+    public void setTotalCalories(Integer totalCalories) {
+        this.totalCalories = totalCalories;
+    }
+
+    public DifficultyLevel getDifficultyLevel() {
+        return difficultyLevel;
+    }
+
+    public void setDifficultyLevel(DifficultyLevel difficultyLevel) {
+        this.difficultyLevel = difficultyLevel;
     }
 }

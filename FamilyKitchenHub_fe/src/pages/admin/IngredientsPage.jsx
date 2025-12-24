@@ -12,13 +12,17 @@ export default function IngredientsPage() {
         name: '',
         unit: '',
         caloriesPer100g: '',
-        nutritionalInfo: ''
+        fat: '',
+        carbs: '',
+        protein: ''
     });
     const [newIngredient, setNewIngredient] = useState({
         name: '',
         unit: '',
         caloriesPer100g: '',
-        nutritionalInfo: ''
+        fat: '',
+        carbs: '',
+        protein: ''
     });
     const [showAddRow, setShowAddRow] = useState(false);
     const [expandedId, setExpandedId] = useState(null);
@@ -47,11 +51,26 @@ export default function IngredientsPage() {
 
     const handleEdit = (ingredient) => {
         setEditingId(ingredient.id);
+
+        let fat = '', carbs = '', protein = '';
+        try {
+            if (ingredient.nutritionalInfo) {
+                const info = JSON.parse(ingredient.nutritionalInfo);
+                fat = info.fat !== undefined ? info.fat : '';
+                carbs = info.carbs !== undefined ? info.carbs : '';
+                protein = info.protein !== undefined ? info.protein : '';
+            }
+        } catch (e) {
+            console.error('Error parsing nutritional info:', e);
+        }
+
         setEditForm({
             name: ingredient.name || '',
             unit: ingredient.unit || '',
             caloriesPer100g: ingredient.caloriesPer100g !== null && ingredient.caloriesPer100g !== undefined ? ingredient.caloriesPer100g : '',
-            nutritionalInfo: ingredient.nutritionalInfo || ''
+            fat: fat,
+            carbs: carbs,
+            protein: protein
         });
     };
 
@@ -61,16 +80,41 @@ export default function IngredientsPage() {
             name: '',
             unit: '',
             caloriesPer100g: '',
-            nutritionalInfo: ''
+            fat: '',
+            carbs: '',
+            protein: ''
         });
     };
 
     const handleSaveEdit = async (id) => {
+        // Validate required field
+        if (!editForm.name || !editForm.name.trim()) {
+            toast.error('Please enter an ingredient name');
+            return;
+        }
+        if (!editForm.unit || !editForm.unit.trim()) {
+            toast.error('Please enter a unit');
+            return;
+        }
+        if (!editForm.caloriesPer100g) {
+            toast.error('Please enter calories per 100g');
+            return;
+        }
+
         try {
+            // Construct nutritional info JSON
+            const nutritionalInfo = JSON.stringify({
+                fat: editForm.fat ? parseFloat(editForm.fat) : 0,
+                carbs: editForm.carbs ? parseFloat(editForm.carbs) : 0,
+                protein: editForm.protein ? parseFloat(editForm.protein) : 0
+            });
+
             // Convert calories to number
             const dataToSave = {
-                ...editForm,
-                caloriesPer100g: editForm.caloriesPer100g ? parseInt(editForm.caloriesPer100g) : null
+                name: editForm.name,
+                unit: editForm.unit,
+                caloriesPer100g: editForm.caloriesPer100g ? parseInt(editForm.caloriesPer100g) : null,
+                nutritionalInfo: nutritionalInfo
             };
             await updateIngredient(id, dataToSave);
             toast.success('Ingredient updated successfully!');
@@ -101,7 +145,9 @@ export default function IngredientsPage() {
             name: '',
             unit: '',
             caloriesPer100g: '',
-            nutritionalInfo: ''
+            fat: '',
+            carbs: '',
+            protein: ''
         });
     };
 
@@ -111,16 +157,41 @@ export default function IngredientsPage() {
             name: '',
             unit: '',
             caloriesPer100g: '',
-            nutritionalInfo: ''
+            fat: '',
+            carbs: '',
+            protein: ''
         });
     };
 
     const handleSaveNew = async () => {
+        // Validate required field
+        if (!newIngredient.name || !newIngredient.name.trim()) {
+            toast.error('Please enter an ingredient name');
+            return;
+        }
+        if (!newIngredient.unit || !newIngredient.unit.trim()) {
+            toast.error('Please enter a unit');
+            return;
+        }
+        if (!newIngredient.caloriesPer100g) {
+            toast.error('Please enter calories per 100g');
+            return;
+        }
+
         try {
+            // Construct nutritional info JSON
+            const nutritionalInfo = JSON.stringify({
+                fat: newIngredient.fat ? parseFloat(newIngredient.fat) : 0,
+                carbs: newIngredient.carbs ? parseFloat(newIngredient.carbs) : 0,
+                protein: newIngredient.protein ? parseFloat(newIngredient.protein) : 0
+            });
+
             // Convert calories to number
             const dataToSave = {
-                ...newIngredient,
-                caloriesPer100g: newIngredient.caloriesPer100g ? parseInt(newIngredient.caloriesPer100g) : null
+                name: newIngredient.name,
+                unit: newIngredient.unit,
+                caloriesPer100g: newIngredient.caloriesPer100g ? parseInt(newIngredient.caloriesPer100g) : null,
+                nutritionalInfo: nutritionalInfo
             };
             await createIngredient(dataToSave);
             toast.success('Ingredient created successfully!');
@@ -129,7 +200,9 @@ export default function IngredientsPage() {
                 name: '',
                 unit: '',
                 caloriesPer100g: '',
-                nutritionalInfo: ''
+                fat: '',
+                carbs: '',
+                protein: ''
             });
             fetchIngredients();
         } catch (error) {
@@ -269,13 +342,38 @@ export default function IngredientsPage() {
                                     />
                                 </td>
                                 <td>
-                                    <input
-                                        type="text"
-                                        className="inline-input"
-                                        value={newIngredient.nutritionalInfo}
-                                        onChange={(e) => setNewIngredient({ ...newIngredient, nutritionalInfo: e.target.value })}
-                                        placeholder='{"fat": 0, "carbs": 0, "protein": 0}'
-                                    />
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>Fat</span>
+                                            <input
+                                                type="number"
+                                                className="inline-input"
+                                                value={newIngredient.fat}
+                                                onChange={(e) => setNewIngredient({ ...newIngredient, fat: e.target.value })}
+                                                style={{ width: '50px' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>Carb</span>
+                                            <input
+                                                type="number"
+                                                className="inline-input"
+                                                value={newIngredient.carbs}
+                                                onChange={(e) => setNewIngredient({ ...newIngredient, carbs: e.target.value })}
+                                                style={{ width: '50px' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>Prot</span>
+                                            <input
+                                                type="number"
+                                                className="inline-input"
+                                                value={newIngredient.protein}
+                                                onChange={(e) => setNewIngredient({ ...newIngredient, protein: e.target.value })}
+                                                style={{ width: '50px' }}
+                                            />
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     <button className="btn-save" onClick={handleSaveNew}>
@@ -325,13 +423,38 @@ export default function IngredientsPage() {
                                             />
                                         </td>
                                         <td>
-                                            <input
-                                                type="text"
-                                                className="inline-input"
-                                                value={editForm.nutritionalInfo}
-                                                onChange={(e) => setEditForm({ ...editForm, nutritionalInfo: e.target.value })}
-                                                placeholder='{"fat": 0, "carbs": 0, "protein": 0}'
-                                            />
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>Fat</span>
+                                                    <input
+                                                        type="number"
+                                                        className="inline-input"
+                                                        value={editForm.fat}
+                                                        onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })}
+                                                        style={{ width: '50px' }}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>Carb</span>
+                                                    <input
+                                                        type="number"
+                                                        className="inline-input"
+                                                        value={editForm.carbs}
+                                                        onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })}
+                                                        style={{ width: '50px' }}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>Prot</span>
+                                                    <input
+                                                        type="number"
+                                                        className="inline-input"
+                                                        value={editForm.protein}
+                                                        onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })}
+                                                        style={{ width: '50px' }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <button className="btn-save" onClick={() => handleSaveEdit(ingredient.id)}>
@@ -354,19 +477,40 @@ export default function IngredientsPage() {
                                                 {parseNutritionalInfo(ingredient.nutritionalInfo)}
                                             </td>
                                             <td>
-                                                <button className="btn-edit" onClick={() => handleEdit(ingredient)}>
-                                                    ✏️ Edit
-                                                </button>
-                                                <button className="btn-delete" onClick={() => handleDelete(ingredient.id)}>
-                                                    🗑️ Delete
-                                                </button>
-                                                <button
-                                                    className="btn-expand"
-                                                    onClick={() => handleToggleExpand(ingredient.id)}
-                                                    title="Manage Tags"
-                                                >
-                                                    {expandedId === ingredient.id ? '▲' : '▼'}
-                                                </button>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        type="button"
+                                                        className="btn-icon btn-edit-icon"
+                                                        onClick={() => handleEdit(ingredient)}
+                                                        title="Sửa"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path>
+                                                            <path d="M15 5l4 4"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn-icon btn-delete-icon"
+                                                        onClick={() => handleDelete(ingredient.id)}
+                                                        title="Xóa"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M3 6h18"></path>
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                            <path d="M10 11v6"></path>
+                                                            <path d="M14 11v6"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        className="btn-expand"
+                                                        onClick={() => handleToggleExpand(ingredient.id)}
+                                                        title="Manage Tags"
+                                                    >
+                                                        {expandedId === ingredient.id ? '▲' : '▼'}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
 

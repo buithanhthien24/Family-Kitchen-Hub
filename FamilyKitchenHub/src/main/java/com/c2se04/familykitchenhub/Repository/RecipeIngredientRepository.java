@@ -38,3 +38,4 @@ public interface RecipeIngredientRepository extends JpaRepository<RecipeIngredie
      */
     void deleteByIngredientId(Long ingredientId);
 }
+

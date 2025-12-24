@@ -86,7 +86,7 @@ export const createRecipeComment = async (recipeId, payload) => {
   return res.data;
 };
 
-// POST /api/media – upload ảnh/video, backend trả về { url, type, id? }
+// POST /api/media/upload – upload ảnh/video, backend trả về { url, type, id? }
 export const uploadCommentMedia = async (file) => {
   if (!file) {
     throw new Error("File không hợp lệ");
@@ -96,7 +96,7 @@ export const uploadCommentMedia = async (file) => {
   formData.append("file", file);
 
   try {
-    const res = await axios.post("/media", formData, {
+    const res = await axios.post("/media/upload", formData, {
       headers: {
         // Không set Content-Type để browser tự động set với boundary
         // Nếu set thủ công sẽ thiếu boundary và gây lỗi
@@ -121,6 +121,19 @@ export const uploadCommentMedia = async (file) => {
     // Re-throw để component có thể xử lý
     throw error;
   }
+};
+
+// PUT /api/recipes/comments/{commentId} - Update comment
+export const updateRecipeComment = async (commentId, payload) => {
+  const res = await axios.put(`/recipes/comments/${commentId}`, payload);
+  return res.data;
+};
+
+// DELETE /api/recipes/comments/{commentId}?userId={userId} - Delete comment
+export const deleteRecipeComment = async (commentId, userId) => {
+  await axios.delete(`/recipes/comments/${commentId}`, {
+    params: { userId }
+  });
 };
 
 // ============================
@@ -191,6 +204,8 @@ export default {
   getRecipeComments,
   createRecipeComment,
   uploadCommentMedia,
+  updateRecipeComment,
+  deleteRecipeComment,
   getPostsByEngagement,
   cookRecipe,
   getCookableRecipes,

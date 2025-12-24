@@ -33,8 +33,8 @@ public class RecipeCommentService {
 
     @Autowired
     public RecipeCommentService(RecipeCommentRepository recipeCommentRepository,
-                                RecipeRepository recipeRepository,
-                                UserRepository userRepository) {
+            RecipeRepository recipeRepository,
+            UserRepository userRepository) {
         this.recipeCommentRepository = recipeCommentRepository;
         this.recipeRepository = recipeRepository;
         this.userRepository = userRepository;
@@ -105,6 +105,62 @@ public class RecipeCommentService {
         return mapToResponse(saved);
     }
 
+    @Transactional
+    public RecipeCommentResponseDTO updateComment(Long commentId, RecipeCommentRequestDTO request) {
+        if (request == null || request.getUserId() == null) {
+            throw new BadRequestException("Thiếu userId khi cập nhật bình luận");
+        }
+        if (!StringUtils.hasText(request.getContent())) {
+            throw new BadRequestException("Nội dung bình luận không được trống");
+        }
+
+        RecipeComment comment = recipeCommentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("RecipeComment", "id", commentId));
+
+        // Validate user owns the comment
+        if (!comment.getUser().getId().equals(request.getUserId())) {
+            throw new BadRequestException("Bạn không có quyền chỉnh sửa bình luận này");
+        }
+
+        // Update content
+        comment.setContent(request.getContent().trim());
+
+        // Update media if provided
+        if (request.getMedia() != null) {
+            comment.clearMedia();
+            for (CommentMediaRequestDTO mediaRequest : request.getMedia()) {
+                if (mediaRequest == null || !StringUtils.hasText(mediaRequest.getUrl())) {
+                    continue;
+                }
+                CommentMedia media = new CommentMedia();
+                media.setUrl(mediaRequest.getUrl());
+                MediaType mediaType = mediaRequest.getType() != null ? mediaRequest.getType() : MediaType.IMAGE;
+                media.setType(mediaType);
+                comment.addMedia(media);
+            }
+        }
+
+        RecipeComment saved = recipeCommentRepository.save(comment);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public void deleteComment(Long commentId, Long userId) {
+        if (userId == null) {
+            throw new BadRequestException("Thiếu userId khi xóa bình luận");
+        }
+
+        RecipeComment comment = recipeCommentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("RecipeComment", "id", commentId));
+
+        // Validate user owns the comment
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new BadRequestException("Bạn không có quyền xóa bình luận này");
+        }
+
+        recipeCommentRepository.delete(comment);
+    }
+
     private RecipeCommentResponseDTO mapToResponse(RecipeComment comment) {
         RecipeCommentResponseDTO dto = new RecipeCommentResponseDTO();
         dto.setId(comment.getId());
@@ -123,4 +179,3 @@ public class RecipeCommentService {
         return dto;
     }
 }
-

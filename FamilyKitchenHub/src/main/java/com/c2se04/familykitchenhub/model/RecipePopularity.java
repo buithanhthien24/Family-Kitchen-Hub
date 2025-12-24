@@ -37,6 +37,7 @@ public class RecipePopularity {
     public void recalculateScore(double searchWeight, double bookmarkWeight) {
         this.popularityScore = searchCount * searchWeight + bookmarkCount * bookmarkWeight;
     }
+    
 
     public Long getId() {
         return id;

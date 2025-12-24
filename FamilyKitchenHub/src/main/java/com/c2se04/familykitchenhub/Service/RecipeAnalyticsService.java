@@ -194,6 +194,8 @@ public class RecipeAnalyticsService {
         dto.setPopularityScore(popularity.getPopularityScore());
         dto.setSearchCount(popularity.getSearchCount());
         dto.setBookmarkCount(popularity.getBookmarkCount());
+        dto.setCookingTimeMinutes(recipe.getCookingTimeMinutes());
+        dto.setServings(recipe.getServings());
         return dto;
     }
 
@@ -205,6 +207,8 @@ public class RecipeAnalyticsService {
         dto.setPopularityScore(0.0);
         dto.setSearchCount(0L);
         dto.setBookmarkCount(0L);
+        dto.setCookingTimeMinutes(recipe.getCookingTimeMinutes());
+        dto.setServings(recipe.getServings());
         return dto;
     }
 

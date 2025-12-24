@@ -6,9 +6,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
-    
+
     /**
      * Convert User entity to UserResponse DTO
+     * 
      * @param user User entity
      * @return UserResponse DTO
      */
@@ -16,7 +17,7 @@ public class UserMapper {
         if (user == null) {
             return null;
         }
-        
+
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
@@ -25,8 +26,6 @@ public class UserMapper {
                 user.getRole(),
                 user.getIsVerified(),
                 user.getCreatedAt(),
-                user.getCountry()
-        );
+                user.getCountry());
     }
 }
-

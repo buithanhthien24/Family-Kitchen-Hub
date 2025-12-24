@@ -131,13 +131,9 @@ export default function UsersPage() {
                                     <tr key={user.id} className="editing-row">
                                         <td>{user.id}</td>
                                         <td>
-                                            <input
-                                                type="text"
-                                                className="inline-input"
-                                                value={editForm.username}
-                                                onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                                                autoFocus
-                                            />
+                                            <span className="read-only-value" style={{ padding: '8px', display: 'block', color: '#666' }}>
+                                                {editForm.username}
+                                            </span>
                                         </td>
                                         <td>
                                             <input
@@ -148,12 +144,9 @@ export default function UsersPage() {
                                             />
                                         </td>
                                         <td>
-                                            <input
-                                                type="email"
-                                                className="inline-input"
-                                                value={editForm.email}
-                                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                            />
+                                            <span className="read-only-value" style={{ padding: '8px', display: 'block', color: '#666' }}>
+                                                {editForm.email}
+                                            </span>
                                         </td>
                                         <td>
                                             <input
@@ -164,14 +157,9 @@ export default function UsersPage() {
                                             />
                                         </td>
                                         <td>
-                                            <select
-                                                className="inline-select"
-                                                value={editForm.role}
-                                                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                                            >
-                                                <option value="USER">USER</option>
-                                                <option value="ADMIN">ADMIN</option>
-                                            </select>
+                                            <span className="read-only-value" style={{ padding: '8px', display: 'block', color: '#666' }}>
+                                                {editForm.role}
+                                            </span>
                                         </td>
                                         <td>{formatDate(user.createdAt)}</td>
                                         <td>
@@ -198,12 +186,33 @@ export default function UsersPage() {
                                         </td>
                                         <td>{formatDate(user.createdAt)}</td>
                                         <td>
-                                            <button className="btn-edit" onClick={() => handleEdit(user)}>
-                                                ✏️ Edit
-                                            </button>
-                                            <button className="btn-delete" onClick={() => handleDelete(user.id)}>
-                                                🗑️ Delete
-                                            </button>
+                                            <div className="action-buttons">
+                                                <button
+                                                    type="button"
+                                                    className="btn-icon btn-edit-icon"
+                                                    onClick={() => handleEdit(user)}
+                                                    title="Sửa"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path>
+                                                        <path d="M15 5l4 4"></path>
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn-icon btn-delete-icon"
+                                                    onClick={() => handleDelete(user.id)}
+                                                    title="Xóa"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M3 6h18"></path>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                        <path d="M10 11v6"></path>
+                                                        <path d="M14 11v6"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )

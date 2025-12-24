@@ -1,0 +1,34 @@
+# Root level .gitignore for Family Kitchen Hub
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Postman collections (if they contain sensitive data)
+*.postman_environment.json
+
+# Build artifacts
+build/
+dist/
+target/
+
+# Media uploads (too large for git)
+uploads/
+media/

@@ -50,6 +50,10 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// Spring Dotenv - Load .env files
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
+
 }
 
 tasks.named('test') {

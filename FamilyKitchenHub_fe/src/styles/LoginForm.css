@@ -50,7 +50,7 @@ p {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
-   text-align: left;
+  text-align: left;
 }
 
 .form label {
@@ -76,9 +76,11 @@ p {
   outline: none;
   font-size: 14px;
   background-color: #fff;
-  color: #111827; /* 👈 Thêm dòng này để chữ luôn hiển thị rõ */
+  color: #111827;
+  /* 👈 Thêm dòng này để chữ luôn hiển thị rõ */
   display: block;
 }
+
 /* @media (prefers-color-scheme: dark) {
   .input-box input {
     background-color: #1f2937;
@@ -135,6 +137,7 @@ p {
 .divider::before {
   left: 0;
 }
+
 .divider::after {
   right: 0;
 }
@@ -186,6 +189,7 @@ p {
 .signup-link a:hover {
   text-decoration: underline;
 }
+
 /* Gui lai ma OTP */
 .resend-btn {
   background: none;
@@ -205,6 +209,7 @@ p {
   color: #16a34a;
   font-size: 14px;
 }
+
 .otp-box {
   display: flex;
   justify-content: center;
@@ -219,7 +224,8 @@ p {
   text-align: center;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background-color: #fff; /* ✅ nền trắng */
+  background-color: #fff;
+  /* ✅ nền trắng */
   color: #000;
   transition: all 0.2s ease;
 }
@@ -241,6 +247,7 @@ p {
 .resend-btn:hover {
   text-decoration: underline;
 }
+
 .verify-email-btn {
   background: #c2410c;
   border: none;
@@ -255,7 +262,8 @@ p {
 
   /* căn giữa */
   display: block;
-  margin: 20px auto 0; /* trên - auto trái phải - dưới */
+  margin: 20px auto 0;
+  /* trên - auto trái phải - dưới */
   text-align: center;
 }
 

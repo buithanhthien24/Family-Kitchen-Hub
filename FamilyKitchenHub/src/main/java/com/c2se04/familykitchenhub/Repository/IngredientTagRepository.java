@@ -36,3 +36,4 @@ public interface IngredientTagRepository extends JpaRepository<IngredientTag, Lo
 
     void deleteByIngredientId(Long ingredientId);
 }
+
